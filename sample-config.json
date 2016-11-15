@@ -1,0 +1,25 @@
+{
+     "bridge": {
+        "name": "HomeBridge",
+        "username": "CC:22:3D:E3:CE:30",
+        "port": 51826,
+        "pin": "031-45-154"
+    },
+    
+    "description": "HomeBridge With Control4",
+
+    "accessories": [ 
+        {
+          "accessory":"Control4",
+               "name":"Kitchen Overhead Lights",
+            "service":"Light",
+           "base_url":"http://192.168.1.201:8081/349",
+  "has_level_control":"yes",
+     "switchHandling":"realtime",
+ "brightnessHandling":"realtime",
+   "refresh_interval":2000,
+       "manufacturer":"Control4",
+              "model":"ldz-102-w"
+         }
+    ]
+}
