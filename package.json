@@ -6,6 +6,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "engines": {
+    "node": ">=0.12.0",
+    "homebridge": ">=0.2.0"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/varietassoftware/homebridge-control4.git"
