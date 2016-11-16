@@ -10,6 +10,12 @@ your equipment and other software installed on your equipment. You are also sole
 protection of your equipment and backup of your data, and the developers will not be liable for any damages 
 you may suffer in connection with using, modifying, or distributing this SOFTWARE PRODUCT. 
 
+# Compatibility Note
+
+In order for this plugin to function, you must have the Homebridge driver from Varietas Software installed
+in your Control4 project.  The driver is currently in beta.  Contact josh@varietassoftware.com to be 
+considered for beta testing.  Once the driver is released, it will be available via Houselogix.
+
 # homebridge-control4
 
 Supports bidirectional communication with a Control4 project on the HomeBridge Platform. Currently supports
