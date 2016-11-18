@@ -522,10 +522,7 @@ var pollingtoevent = require('polling-to-event');
                                 this.fanService
                                 .addCharacteristic(new Characteristic.RotationSpeed())
                                 .on('get', this.getBrightness.bind(this))
-                                .on('set', this.setBrightness.bind(this));
-                        }
-                        if( this.enable_level ) {
-                          this.fanService.getCharacteristic(Characteristic.RotationSpeed)
+                                .on('set', this.setBrightness.bind(this))
                                 .setProps({minStep:25});
                         }
                         return [informationService, this.fanService];
