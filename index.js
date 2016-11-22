@@ -118,6 +118,7 @@ var pollingtoevent = require('polling-to-event');
 					}
 					break;
 				case "Light":
+                                case "Dimmer":
 					if (that.lightbulbService) {
 						that.lightbulbService.getCharacteristic(Characteristic.On)
 						.setValue(that.state);
@@ -207,6 +208,7 @@ var pollingtoevent = require('polling-to-event');
 			that.enableSet = false;
                         switch (that.service) {
                           case "Light":
+                          case "Dimmer":
 			    if (that.lightbulbService) {				
 				that.log(that.service, "received brightness",that.brightnesslvl_url, "level is currently", that.currentlevel); 		        
 				that.lightbulbService.getCharacteristic(Characteristic.Brightness)
@@ -427,6 +429,7 @@ var pollingtoevent = require('polling-to-event');
 					break;}
 					return [this.switchService];
 		case "Light":	
+                case "Dimmer":
 			this.lightbulbService = new Service.Lightbulb(this.name);			
 			switch (this.switchHandling) {
 			//Power Polling
