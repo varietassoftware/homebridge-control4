@@ -463,7 +463,7 @@ var pollingtoevent = require('polling-to-event');
                         .on('get', function(callback) {callback(null,that.state?0:100)});
                         this.doorService
                         .getCharacteristic(Characteristic.TargetPosition)
-                        .on('get', function(callback) {callback(null,that.state?0:100)}))
+                        .on('get', function(callback) {callback(null,that.state?0:100)})
                         .on('set', this.setPowerState.bind(this));
                         this.doorService
                         .getCharacteristic(Characteristic.PositionState)
