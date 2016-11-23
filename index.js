@@ -41,7 +41,7 @@ var pollingtoevent = require('polling-to-event');
                 }
                 if( this.enable_status == "yes" )
                 {              
-                  if( this.service == "Light" || this.service == "Switch" || this.service == "Fan" )
+                  if( this.service == "Light" || this.service == "Dimmer" || this.service == "Switch" || this.service == "Fan" )
 		    this.status_url           = this.base_url + "/light_state";
                   else if( this.service == "Door" || this.service == "Garage Door" || this.service == "Window" ||
                            this.service == "Contact" || this.service == "Motion" )
@@ -534,13 +534,11 @@ var pollingtoevent = require('polling-to-event');
                         this.securityService = new Service.SecuritySystem(this.name);
                         this.securityService
                         .getCharacteristic(Characteristic.SecuritySystemCurrentState)
-                        .on('get', function(callback) {callback(null,that.secCurState)})
-                        .setValue(3);
+                        .on('get', function(callback) {callback(null,that.secCurState)});
                         this.securityService
                         .getCharacteristic(Characteristic.SecuritySystemTargetState)
                         .on('get', function(callback) {callback(null,that.secTarState)})
-                        .on('set', this.setSecurityState.bind(this))
-                        .setValue(3);
+                        .on('set', this.setSecurityState.bind(this));
                         return [informationService, this.securityService];
                         break;
 		}
