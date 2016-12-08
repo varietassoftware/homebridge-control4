@@ -31,6 +31,13 @@ var pollingtoevent = require('polling-to-event');
                     this.off_url              = this.base_url + "/open";
                     this.off_body             = config["close_body"];
                   }
+                  else if( this.service == "Lock" )
+                  {
+                    this.on_url               = this.base_url + "/lock";
+                    this.on_body              = config["open_body"];
+                    this.off_url              = this.base_url + "/unlock";
+                    this.off_body             = config["close_body"];
+                  }
                   else
                   {
 		    this.on_url                 = this.base_url + "/on";
@@ -44,7 +51,7 @@ var pollingtoevent = require('polling-to-event');
                   if( this.service == "Light" || this.service == "Dimmer" || this.service == "Switch" || this.service == "Fan" )
 		    this.status_url           = this.base_url + "/light_state";
                   else if( this.service == "Door" || this.service == "Garage Door" || this.service == "Window" ||
-                           this.service == "Contact" || this.service == "Motion" )
+                           this.service == "Contact" || this.service == "Motion" || this.service == "Lock" )
                     this.status_url           = this.base_url + "/contact_state";
                   else
                     this.status_url           = this.base_url + "/status";
@@ -150,6 +157,14 @@ var pollingtoevent = require('polling-to-event');
                                                 .setValue(that.state?Characteristic.CurrentDoorState.CLOSED:Characteristic.CurrentDoorState.OPEN);
                                                 that.garageService.getCharacteristic(Characteristic.TargetDoorState)
                                                 .setValue(that.state?Characteristic.TargetDoorState.CLOSED:Characteristic.TargetDoorState.OPEN);
+                                        }
+                                        break;
+                                case "Lock":
+                                        if( that.lockService ) {
+                                                that.lockService.getCharacteristic(Characteristic.LockCurrentState)
+                                                .setValue(that.state?Characteristic.LockCurrentState.SECURED:Characteristic.LockCurrentState.UNSECURED);
+                                                that.lockService.getCharacteristic(Characteristic.LockTargetState)
+                                                .setValue(that.state?Characteristic.LockTargetState.SECURED:Characteristic.LockTargetState.UNSECURED);
                                         }
                                         break;
                                 case "Contact":
@@ -497,6 +512,17 @@ var pollingtoevent = require('polling-to-event');
                         .getCharacteristic(Characteristic.ObstructionDetected)
                         .on('get', function(callback) {callback(null,false)});
                         return [informationService, this.garageService];
+                        break;
+                case "Lock":
+                        this.lockService = new Service.LockMechanism(this.name);
+                        this.lockService
+                        .getCharacteristic(Characteristic.LockCurrentState)
+                        .on('get', function(callback) {callback(null,that.state?Characteristic.LockCurrentState.SECURED:Characteristic.LockCurrentState.UNSECURED)});
+                        this.lockService
+                        .getCharacteristic(Characteristic.LockTargetState)
+                        .on('get', this.getPowerState.bind(this))
+                        .on('set', this.setPowerState.bind(this));
+                        return [informationService, this.lockService];
                         break;
                 case "Contact":
                         this.contactService = new Service.ContactSensor(this.name);
