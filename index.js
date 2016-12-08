@@ -162,9 +162,9 @@ var pollingtoevent = require('polling-to-event');
                                 case "Lock":
                                         if( that.lockService ) {
                                                 that.lockService.getCharacteristic(Characteristic.LockCurrentState)
-                                                .setValue(that.state?Characteristic.LockCurrentState.SECURED:Characteristic.LockCurrentState.UNSECURED);
+                                                .setValue(!that.state?Characteristic.LockCurrentState.SECURED:Characteristic.LockCurrentState.UNSECURED);
                                                 that.lockService.getCharacteristic(Characteristic.LockTargetState)
-                                                .setValue(that.state?Characteristic.LockTargetState.SECURED:Characteristic.LockTargetState.UNSECURED);
+                                                .setValue(!that.state?Characteristic.LockTargetState.SECURED:Characteristic.LockTargetState.UNSECURED);
                                         }
                                         break;
                                 case "Contact":
@@ -517,7 +517,7 @@ var pollingtoevent = require('polling-to-event');
                         this.lockService = new Service.LockMechanism(this.name);
                         this.lockService
                         .getCharacteristic(Characteristic.LockCurrentState)
-                        .on('get', function(callback) {callback(null,that.state?Characteristic.LockCurrentState.SECURED:Characteristic.LockCurrentState.UNSECURED)});
+                        .on('get', function(callback) {callback(null,!that.state?Characteristic.LockCurrentState.SECURED:Characteristic.LockCurrentState.UNSECURED)});
                         this.lockService
                         .getCharacteristic(Characteristic.LockTargetState)
                         .on('get', this.getPowerState.bind(this))
