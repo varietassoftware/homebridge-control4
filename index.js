@@ -520,7 +520,7 @@ var pollingtoevent = require('polling-to-event');
                         .on('get', function(callback) {callback(null,!that.state?Characteristic.LockCurrentState.SECURED:Characteristic.LockCurrentState.UNSECURED)});
                         this.lockService
                         .getCharacteristic(Characteristic.LockTargetState)
-                        .on('get', this.getPowerState.bind(this))
+                        .on('get', function(callback) {callback(null,!that.state?Characteristic.LockCurrentState.SECURED:Characteristic.LockCurrentState.UNSECURED)})
                         .on('set', this.setPowerState.bind(this));
                         return [informationService, this.lockService];
                         break;
