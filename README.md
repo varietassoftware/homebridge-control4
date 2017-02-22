@@ -13,7 +13,7 @@ you may suffer in connection with using, modifying, or distributing this SOFTWAR
 # Compatibility Note
 
 In order for this plugin to function, you must have the Homebridge driver from Varietas Software installed
-in your Control4 project. You can purchase it from <a href="https://www.houselogix.com/shop/homebridge-driver>HouseLogix</a>
+in your Control4 project. You can purchase it from <a href="https://www.houselogix.com/shop/homebridge-driver">HouseLogix</a>
 or directly from <a href="http://www.varietassoftware.com/control4">Varietas Software</a>.  
 
 # homebridge-control4
