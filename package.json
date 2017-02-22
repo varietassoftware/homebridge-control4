@@ -1,6 +1,6 @@
 {
   "name": "homebridge-control4",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "A homebridge plugin to enable bidirectional access to Control4 devices.",
   "main": "index.js",
   "scripts": {
