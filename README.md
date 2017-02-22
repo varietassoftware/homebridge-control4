@@ -13,14 +13,14 @@ you may suffer in connection with using, modifying, or distributing this SOFTWAR
 # Compatibility Note
 
 In order for this plugin to function, you must have the Homebridge driver from Varietas Software installed
-in your Control4 project.  The driver is currently in beta.  Contact josh@varietassoftware.com to be 
-considered for beta testing.  Once the driver is released, it will be available via Houselogix.
+in your Control4 project. You can purchase it from <a href="https://www.houselogix.com/shop/homebridge-driver>HouseLogix</a>
+or directly from <a href="http://www.varietassoftware.com/control4">Varietas Software</a>.  
 
 # homebridge-control4
 
 Supports bidirectional communication with a Control4 project on the HomeBridge Platform. Currently supports
 native Control4 lights, dimmers, contact switches, garage door openers, ceiling fans (connected to switch),
-fan speed controllers, motion sensors, and security systems.
+fan speed controllers, motion sensors, locks, and security systems.
 
 # Installation
 
@@ -40,7 +40,7 @@ Configuration sample:
 {
   "accessory":"Control4",
   "name":"Kitchen Lights",
-  "service":"Light",
+  "service":"Dimmer",
   "base_url":"http://192.168.1.201:8081/349",
   "has_level_control":"yes",
   "switchHandling":"realtime",
