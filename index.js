@@ -183,9 +183,10 @@ var pollingtoevent = require('polling-to-event');
                                                 }
                                                 if( that.state == toCheck ) {
                                                   that.lastSent = !that.lastSent;
+                                                
+                                                  that.doorbellService.getCharacteristic(Characteristic.ProgrammableSwitchEvent)
+                                                     .setValue(that.lastSent?1:0);
                                                 }
-                                                that.doorbellService.getCharacteristic(Characteristic.ProgrammableSwitchEvent)
-                                       .setValue(that.lastSent?1:0);
                                         }
                                         break;
                                 case "Motion":
@@ -554,14 +555,7 @@ var pollingtoevent = require('polling-to-event');
                         this.doorbellService
                         .getCharacteristic(Characteristic.ProgrammableSwitchEvent)
                         .on('get', function(callback) {
-                            var toCheck = true;
-                            if( that.invert_contact == "yes" ) {
-                              toCheck = false;
-                            }
-                            if( that.state == toCheck ) {
-                              that.lastSent = !that.lastSent;
-                            }
-                            callback(null,that.lastSent?1:0)});
+                              callback(null,that.lastSent?1:0)});
                         return [informationService, this.doorbellService, this.cameraService];
                         break;
                 case "Motion":
