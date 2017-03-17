@@ -18,8 +18,9 @@ var pollingtoevent = require('polling-to-event');
                 this.enable_status          = config["has_on_state"] || "yes"
                 this.enable_power_control   = config["has_power_control"] || "yes";
                 this.enable_level           = config["has_level_control"] || "no";
+                this.invert_contact         = config["invert_contact"] || "no";
 
-                if( this.service == "Security" || this.service == "Motion" )
+                if( this.service == "Security" || this.service == "Motion" || this.service == "Doorbell" )
                   this.enable_power_control = "no";
 
                 if( this.enable_power_control == "yes" )
@@ -51,7 +52,7 @@ var pollingtoevent = require('polling-to-event');
                   if( this.service == "Light" || this.service == "Dimmer" || this.service == "Switch" || this.service == "Fan" )
 		    this.status_url           = this.base_url + "/light_state";
                   else if( this.service == "Door" || this.service == "Garage Door" || this.service == "Window" ||
-                           this.service == "Contact" || this.service == "Motion" || this.service == "Lock" )
+                           this.service == "Contact" || this.service == "Motion" || this.service == "Lock" || this.service == "Doorbell" )
                     this.status_url           = this.base_url + "/contact_state";
                   else
                     this.status_url           = this.base_url + "/status";
@@ -171,6 +172,16 @@ var pollingtoevent = require('polling-to-event');
                                         if( that.contactService ) {
                                                 that.contactService.getCharacteristic(Characteristic.ContactSensorState)
                                        .setValue(that.state?Characteristic.ContactSensorState.CONTACT_DETECTED:Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
+                                        }
+                                        break;
+                                case "Doorbell":
+                                        if( that.doorbellService ) {
+                                                var toSend = that.state;
+                                                if( that.invert_contact == "yes" ) {
+                                                  toSend = !toSend;
+                                                }
+                                                that.doorbellService.getCharacteristic(Characteristic.ProgrammableSwitchEvent)
+                                       .setValue(toSend?1:0);
                                         }
                                         break;
                                 case "Motion":
@@ -532,6 +543,18 @@ var pollingtoevent = require('polling-to-event');
                             callback(null,that.state?Characteristic.ContactSensorState.CONTACT_DETECTED:Characteristic.ContactSensorState.CONTACT_NOT_DETECTED)
                                                       });
                         return [informationService, this.contactService];
+                        break;
+                case "Doorbell":
+                        this.doorbellService = new Service.Doorbell(this.name);
+                        this.doorbellService
+                        .getCharacteristic(Characteristic.ProgrammableSwitchEvent)
+                        .on('get', function(callback) {
+                            var toSend = that.state;
+                            if( that.invert_contact ) {
+                              toSend = !toSend;
+                            }
+                            callback(null,toSend?1:0)});
+                        return [informationService, this.doorbellService];
                         break;
                 case "Motion":
                         this.motionService = new Service.MotionSensor(this.name);
