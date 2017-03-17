@@ -545,6 +545,7 @@ var pollingtoevent = require('polling-to-event');
                         return [informationService, this.contactService];
                         break;
                 case "Doorbell":
+                        this.cameraService = new Service.CameraRTPStreamManagement(this.name);
                         this.doorbellService = new Service.Doorbell(this.name);
                         this.doorbellService
                         .getCharacteristic(Characteristic.ProgrammableSwitchEvent)
@@ -554,7 +555,7 @@ var pollingtoevent = require('polling-to-event');
                               toSend = !toSend;
                             }
                             callback(null,toSend?1:0)});
-                        return [informationService, this.doorbellService];
+                        return [informationService, this.doorbellService, this.cameraService];
                         break;
                 case "Motion":
                         this.motionService = new Service.MotionSensor(this.name);
