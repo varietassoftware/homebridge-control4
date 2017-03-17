@@ -92,6 +92,7 @@ var pollingtoevent = require('polling-to-event');
 		
 		//realtime polling info
 		this.state = false;
+                this.lastSent = false;
                 this.secTarState = 3;
                 this.secCurState = 3;
 		this.currentlevel = 0;
@@ -176,12 +177,15 @@ var pollingtoevent = require('polling-to-event');
                                         break;
                                 case "Doorbell":
                                         if( that.doorbellService ) {
-                                                var toSend = that.state;
+                                                var toCheck = true;
                                                 if( that.invert_contact == "yes" ) {
-                                                  toSend = !toSend;
+                                                  toCheck = false;
+                                                }
+                                                if( that.state == toCheck ) {
+                                                  that.lastSent = !that.lastSent;
                                                 }
                                                 that.doorbellService.getCharacteristic(Characteristic.ProgrammableSwitchEvent)
-                                       .setValue(toSend?1:0);
+                                       .setValue(that.lastSent?1:0);
                                         }
                                         break;
                                 case "Motion":
@@ -550,11 +554,14 @@ var pollingtoevent = require('polling-to-event');
                         this.doorbellService
                         .getCharacteristic(Characteristic.ProgrammableSwitchEvent)
                         .on('get', function(callback) {
-                            var toSend = that.state;
-                            if( that.invert_contact ) {
-                              toSend = !toSend;
+                            var toCheck = true;
+                            if( that.invert_contact == "yes" ) {
+                              toCheck = false;
                             }
-                            callback(null,toSend?1:0)});
+                            if( that.state == toCheck ) {
+                              that.lastSent = !that.lastSent;
+                            }
+                            callback(null,that.lastSent?1:0)});
                         return [informationService, this.doorbellService, this.cameraService];
                         break;
                 case "Motion":
