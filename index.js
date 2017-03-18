@@ -93,6 +93,7 @@ var pollingtoevent = require('polling-to-event');
 		//realtime polling info
 		this.state = false;
                 this.lastSent = false;
+                this.lastState = false;
                 this.secTarState = 3;
                 this.secCurState = 3;
 		this.currentlevel = 0;
@@ -181,8 +182,9 @@ var pollingtoevent = require('polling-to-event');
                                                 if( that.invert_contact == "yes" ) {
                                                   toCheck = false;
                                                 }
-                                                if( that.state == toCheck ) {
+                                                if( that.state == toCheck && that.state != that.lastState ) {
                                                   that.lastSent = !that.lastSent;
+                                                  that.lastState = that.state;
                                                 
                                                   that.doorbellService.getCharacteristic(Characteristic.ProgrammableSwitchEvent)
                                                      .setValue(that.lastSent?1:0);
