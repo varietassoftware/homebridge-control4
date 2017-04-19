@@ -1,5 +1,6 @@
 var Service, Characteristic;
 var request = require("request");
+var http = require("http");
 var pollingtoevent = require('polling-to-event');
 
 	module.exports = function(homebridge){
@@ -19,6 +20,7 @@ var pollingtoevent = require('polling-to-event');
                 this.enable_power_control   = config["has_power_control"] || "yes";
                 this.enable_level           = config["has_level_control"] || "no";
                 this.invert_contact         = config["invert_contact"] || "no";
+                this.include_video          = config["include_video"] || "yes";
 
                 if( this.service == "Security" || this.service == "Motion" || this.service == "Doorbell" )
                   this.enable_power_control = "no";
@@ -47,6 +49,261 @@ var pollingtoevent = require('polling-to-event');
 		    this.off_body               = config["off_body"];
                   }
                 }
+                var that = this;
+
+                const requestHandler = (request, response) => {  
+                  //console.log(request.url)
+
+                  var parts = request.url.split("/")
+                  var prop = parts[1]
+                  var value = parts[2]
+
+                  //console.log("Received update to property("+prop+") with value("+value+")")
+
+                  if( prop == 1000 )
+                  {
+                    var binaryState = parseInt(value.replace(/\D/g,""));
+                    that.state = binaryState > 0;
+                    that.log(that.service, "received power",that.status_url, "state is currently", binaryState);
+               
+                    // switch used to easily add additonal services
+                    that.enableSet = false;
+                    switch (that.service) {
+                                case "Switch":
+                                        if (that.switchService ) {
+                                                that.switchService .getCharacteristic(Characteristic.On)
+                                                .setValue(that.state);
+                                        }
+                                        break;
+                                case "Light":
+                                case "Dimmer":
+                                        if (that.lightbulbService) {
+                                                that.lightbulbService.getCharacteristic(Characteristic.On)
+                                                .setValue(that.state);
+                                        }
+                                        break;
+                                case "Door":
+                                        if (that.doorService) {
+                                                that.doorService.getCharacteristic(Characteristic.CurrentPosition)
+                                                .setValue(that.state?0:100);
+                                                that.doorService.getCharacteristic(Characteristic.TargetPosition)
+                                                .setValue(that.state?0:100);
+                                                that.doorService.getCharacteristic(Characteristic.PositionState)
+                                                .setValue(2);
+                                        }
+                                        break;
+                                case "Window":
+                                        if (that.windowService) {
+                                                that.windowService.getCharacteristic(Characteristic.CurrentPosition)
+                                                .setValue(that.state?0:100);
+                                                that.windowService.getCharacteristic(Characteristic.TargetPosition)
+                                                .setValue(that.state?0:100);
+                                                that.windowService.getCharacteristic(Characteristic.PositionState)
+                                                .setValue(2);
+                                        }
+                                        break;
+                                case "Garage Door":
+                                        if( that.garageService ) {
+                                                that.garageService.getCharacteristic(Characteristic.CurrentDoorState)
+                                                .setValue(that.state?Characteristic.CurrentDoorState.CLOSED:Characteristic.CurrentDoorState.OPEN);
+                                                that.garageService.getCharacteristic(Characteristic.TargetDoorState)
+                                                .setValue(that.state?Characteristic.TargetDoorState.CLOSED:Characteristic.TargetDoorState.OPEN);
+                                        }
+                                        break;
+                                case "Lock":
+                                        if( that.lockService ) {
+                                                that.lockService.getCharacteristic(Characteristic.LockCurrentState)
+                                                .setValue(!that.state?Characteristic.LockCurrentState.SECURED:Characteristic.LockCurrentState.UNSECURED);
+                                                that.lockService.getCharacteristic(Characteristic.LockTargetState)
+                                                .setValue(!that.state?Characteristic.LockTargetState.SECURED:Characteristic.LockTargetState.UNSECURED);
+                                        }
+                                        break;
+                                case "Contact":
+                                        if( that.contactService ) {
+                                                that.contactService.getCharacteristic(Characteristic.ContactSensorState)
+                                       .setValue(that.state?Characteristic.ContactSensorState.CONTACT_DETECTED:Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
+                                        }
+                                        break;
+                                case "Doorbell":
+                                        if( that.doorbellService ) {
+                                                var toCheck = true;
+                                                if( that.invert_contact == "yes" ) {
+                                                  toCheck = false;
+                                                }
+                                                if( that.state == toCheck && that.state != that.lastState ) {
+                                                  that.lastSent = !that.lastSent;
+
+                                                  that.doorbellService.getCharacteristic(Characteristic.ProgrammableSwitchEvent)
+                                                     .setValue(that.lastSent?1:0);
+                                                }
+                                                that.lastState = that.state;
+                                        }
+                                        break;
+                                case "Motion":
+                                        if( that.motionService ) {
+                                                that.motionService.getCharacteristic(Characteristic.MotionDetected).setValue(!that.state);
+                                        }
+                                        break;
+                                case "Fan":
+                                        if( that.fanService ) {
+                                                that.fanService.getCharacteristic(Characteristic.On).
+                                                setValue(that.state);
+                                        }
+                                        break;
+                                case "Security":
+                                        that.httpRequest(that.status_url, "", "GET", that.username, that.password, that.sendimmediately, function(error, response, body) 
+                                        {
+                                          if (error) 
+                                          {
+                                            that.log('HTTP get power function failed: %s', error.message);
+                                            return;
+                                          } 
+                                          else
+                                          {
+                                            var binaryState = parseInt(body.replace(/\D/g,""));
+                                            that.state = binaryState > 0;
+                                            if( that.securityService && binaryState < 10 )
+                                            {
+                                                if( binaryState < 5 ) {
+                                                  that.secCurState = binaryState;
+                                                  that.secTarState = binaryState;
+                                                } else {
+                                                  that.secTarState = 0;
+                                                }
+                                                that.securityService.getCharacteristic(Characteristic.SecuritySystemCurrentState).
+                                                setValue(that.secCurState);
+                                                that.securityService.getCharacteristic(Characteristic.SecuritySystemTargetState).
+                                                setValue(that.secTarState);
+                                             }
+                                          }
+                                        });
+                                        break;
+                        }
+                        that.enableSet = true;
+                      }
+                      else if( prop == 1001 )
+                      {
+                        that.currentlevel = parseInt(value);
+
+                        that.enableSet = false;
+                        switch (that.service) {
+                          case "Light":
+                          case "Dimmer":
+                            if (that.lightbulbService) {
+                                that.log(that.service, "received brightness",that.brightnesslvl_url, "level is currently", that.currentlevel);
+                                that.lightbulbService.getCharacteristic(Characteristic.Brightness)
+                                .setValue(that.currentlevel);
+                            }
+                            break;
+                          case "Fan":
+                            if( that.fanService ) {
+                                that.log(that.service, "received fan level",that.brightnesslvl_url, "level is currently", that.currentlevel);
+                                that.fanService.getCharacteristic(Characteristic.RotationSpeed)
+                                .setValue(that.currentlevel*25);
+                            }
+                            break;
+                          case "Security":
+                            that.httpRequest(that.status_url, "", "GET", that.username, that.password, that.sendimmediately, function(error, response, body) {
+                              if (error) {
+                                that.log('HTTP get power function failed: %s', error.message);
+                                return;
+                              } else {
+                                var binaryState = parseInt(body.replace(/\D/g,""));
+                                that.state = binaryState > 0;
+                                if( that.securityService && binaryState < 10 ) {
+                                  if( binaryState < 5 ) {
+                                    that.secCurState = binaryState;
+                                    that.secTarState = binaryState;
+                                  } else {
+                                    that.secTarState = 0;
+                                  }
+                                  that.securityService.getCharacteristic(Characteristic.SecuritySystemCurrentState).
+                                    setValue(that.secCurState);
+                                  that.securityService.getCharacteristic(Characteristic.SecuritySystemTargetState).
+                                    setValue(that.secTarState);
+                                }
+                              }});
+                              break;
+                        }
+                        that.enableSet = true;
+                      }
+                      else
+                      {
+                        that.enableSet = false;
+                        switch (that.service) {
+                          case "Security":
+                            that.httpRequest(that.status_url, "", "GET", that.username, that.password, that.sendimmediately, function(error, response, body) {
+                              if (error) {
+                                that.log('HTTP get power function failed: %s', error.message);
+                                return;
+                              } else {
+                                var binaryState = parseInt(body.replace(/\D/g,""));
+                                that.state = binaryState > 0;
+                                if( that.securityService && binaryState < 10 ) {
+                                  if( binaryState < 5 ) {
+                                    that.secCurState = binaryState;
+                                    that.secTarState = binaryState;
+                                  } else {
+                                    that.secTarState = 0;
+                                  }
+                                  that.securityService.getCharacteristic(Characteristic.SecuritySystemCurrentState).
+                                    setValue(that.secCurState);
+                                  that.securityService.getCharacteristic(Characteristic.SecuritySystemTargetState).
+                                    setValue(that.secTarState);
+                                }
+                              }});
+                              break;
+                        }
+                        that.enableSet = true;
+                      }
+                  response.end('OK')
+                }
+
+                const server = http.createServer(requestHandler)
+                const port = this.base_url.substr(this.base_url.lastIndexOf('/')+1)*1+10000;
+                
+                console.log('Starting server on port '+port+' for service '+that.service)
+
+                server.listen(port, (err) => {  
+                  if (err) {
+                   return console.log('something bad happened', err)
+                  } 
+
+                  //console.log(`server is listening on ${port}`)
+
+                  'use strict';
+
+                  var os = require('os');
+                  var ifaces = os.networkInterfaces();
+
+                  Object.keys(ifaces).forEach(function (ifname) {
+                  var alias = 0;
+
+                  ifaces[ifname].forEach(function (iface) {
+                    if ('IPv4' !== iface.family || iface.internal !== false) {
+                      // skip over internal (i.e. 127.0.0.1) and non-ipv4 addresses
+                      return;
+                    }
+
+                    if (alias >= 1) {
+                      // this single interface has multiple ipv4 addresses
+                      //console.log(ifname + ':' + alias, iface.address);
+                    } else {
+                      // this interface has only one ipv4 adress
+                      //console.log(ifname, iface.address);
+
+                      //console.log("Calling: "+that.base_url+"/SetApplianceIP/"+iface.address)
+                      request(that.base_url+"/SetApplianceIP/"+iface.address, function (error, response, body) {
+                        if (!error && response.statusCode == 200) {
+                          //console.log(body) // Print the google web page.
+                        }
+                      })
+                    }
+                    ++alias;
+                  });
+                  });
+                })
+
                 if( this.enable_status == "yes" )
                 {              
                   if( this.service == "Light" || this.service == "Dimmer" || this.service == "Switch" || this.service == "Fan" )
@@ -94,11 +351,12 @@ var pollingtoevent = require('polling-to-event');
 		this.state = false;
                 this.lastSent = false;
                 this.lastState = false;
+                if( this.invert_contact == "yes" )
+                  this.lastState = true;
                 this.secTarState = 3;
                 this.secCurState = 3;
 		this.currentlevel = 0;
 		this.enableSet = true;
-		var that = this;
 		
 		// Status Polling, if you want to add additional services that don't use switch handling you can add something like this || (this.service=="Smoke" || this.service=="Motion"))
 		if (this.status_url && this.switchHandling =="realtime") {
@@ -184,11 +442,11 @@ var pollingtoevent = require('polling-to-event');
                                                 }
                                                 if( that.state == toCheck && that.state != that.lastState ) {
                                                   that.lastSent = !that.lastSent;
-                                                  that.lastState = that.state;
                                                 
                                                   that.doorbellService.getCharacteristic(Characteristic.ProgrammableSwitchEvent)
                                                      .setValue(that.lastSent?1:0);
                                                 }
+                                                that.lastState = that.state;
                                         }
                                         break;
                                 case "Motion":
@@ -558,7 +816,10 @@ var pollingtoevent = require('polling-to-event');
                         .getCharacteristic(Characteristic.ProgrammableSwitchEvent)
                         .on('get', function(callback) {
                               callback(null,that.lastSent?1:0)});
-                        return [informationService, this.doorbellService, this.cameraService];
+                        if( this.include_video )
+                          return [informationService, this.doorbellService, this.cameraService];
+                        else
+                          return [informationService, this.doorbellService];
                         break;
                 case "Motion":
                         this.motionService = new Service.MotionSensor(this.name);
