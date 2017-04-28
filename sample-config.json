@@ -17,7 +17,7 @@
   "has_level_control":"yes",
      "switchHandling":"realtime",
  "brightnessHandling":"realtime",
-   "refresh_interval":2000,
+   "refresh_interval":900000,
        "manufacturer":"Control4",
               "model":"ldz-102-w"
          }
