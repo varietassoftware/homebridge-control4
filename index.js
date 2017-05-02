@@ -1111,7 +1111,7 @@ HttpAccessory.prototype =
                          {
                            var sig = body;
                            var signed = url;
-                           if( sig !== undefined && sig !== null && sig != "null" && sig.length > 0 )
+                           if( sig !== undefined && sig !== null && sig != "null" && sig.length > 0 && sig.length < 50 && !error )
                              signed = signed + "?" + sig;
             
                            request({
