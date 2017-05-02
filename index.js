@@ -1693,7 +1693,8 @@ HttpAccessory.prototype =
                             .on('get', function(callback)
                                        {
                                          that.log("Thermostat get target temp "+that.thermCurState);
-                                         if( that.thermTarState == Characteristic.TargetHeatingCoolingState.OFF )
+                                         if( that.thermTarState == Characteristic.TargetHeatingCoolingState.OFF ||
+                                             that.thermTarState == Characteristic.TargetHeatingCoolingState.AUTO )
                                          {
                                                 that.log("Temp from off mode");
                                                 //Need to adjust the state here because HomeKit doesn't allow a current state of auto.
@@ -1726,10 +1727,10 @@ HttpAccessory.prototype =
                                                 }
                                          }
                                 
-                                         else if( that.thermCurState == Characteristic.TargetHeatingCoolingState.COOL )
+                                         else if( that.thermTarState == Characteristic.TargetHeatingCoolingState.COOL )
                                            { that.log("Sending "+that.thermCoolSet); callback(null,that.thermCoolSet)}
                               
-                                         else if( that.thermCurState == Characteristic.TargetHeatingCoolingState.HEAT )
+                                         else if( that.thermTarState == Characteristic.TargetHeatingCoolingState.HEAT )
                                            { that.log("Sending "+that.thermHeatSet); callback(null,that.thermHeatSet)}
  
                                          else { that.log("What?"); }
