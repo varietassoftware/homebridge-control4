@@ -1391,16 +1391,17 @@ HttpAccessory.prototype =
                        return;
                    }
         
-                   var mode = this.thermCurState;
-                   if( mode == Characteristic.CurrentHeatingCoolingState.OFF)
+                   var mode = this.thermTarState;
+                   if( mode == Characteristic.TargetHeatingCoolingState.OFF ||
+                       mode == Characteristic.TargetHeatingCoolingState.AUTO )
                    {
                        if( this.thermCurrentTemp != -100 && this.thermCoolSet != -100 && this.thermHeatSet != -100 )
                        {
-                           var coolDiff = that.thermCurrentTemp - that.thermCoolSet;
+                           var coolDiff = this.thermCurrentTemp - this.thermCoolSet;
                            if( coolDiff < 0 )
                                coolDiff = coolDiff*-1;
                            
-                           var heatDiff = that.thermCurrentTemp - that.thermHeatSet;
+                           var heatDiff = this.thermCurrentTemp - this.thermHeatSet;
                            if( heatDiff < 0 )
                                heatDiff = heatDiff*-1;
                            
