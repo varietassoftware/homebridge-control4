@@ -123,10 +123,11 @@ function HttpAccessory(log, config)
                     break;
                 case "Garage Door":
                     if( that.garageService ) {
+                        that.targetGarageDoorState = that.state?Characteristic.CurrentDoorState.CLOSED:Characteristic.CurrentDoorState.OPEN;
                         that.garageService.getCharacteristic(Characteristic.CurrentDoorState)
-                        .setValue(that.state?Characteristic.CurrentDoorState.CLOSED:Characteristic.CurrentDoorState.OPEN);
+                        .setValue(that.targetGarageDoorState);
                         that.garageService.getCharacteristic(Characteristic.TargetDoorState)
-                        .setValue(that.state?Characteristic.TargetDoorState.CLOSED:Characteristic.TargetDoorState.OPEN);
+                        .setValue(that.targetGarageDoorState);
                     }
                     break;
                 case "Lock":
@@ -189,10 +190,12 @@ function HttpAccessory(log, config)
                                      } else {
                                      that.secTarState = 0;
                                      }
+                                     that.enableSet = false;
                                      that.securityService.getCharacteristic(Characteristic.SecuritySystemCurrentState).
                                      setValue(that.secCurState);
                                      that.securityService.getCharacteristic(Characteristic.SecuritySystemTargetState).
                                      setValue(that.secTarState);
+                                     that.enableSet = true;
                                      }
                                      }
                                      });
@@ -236,10 +239,12 @@ function HttpAccessory(log, config)
                                      } else {
                                      that.secTarState = 0;
                                      }
+                                     that.enableSet = false;
                                      that.securityService.getCharacteristic(Characteristic.SecuritySystemCurrentState).
                                      setValue(that.secCurState);
                                      that.securityService.getCharacteristic(Characteristic.SecuritySystemTargetState).
                                      setValue(that.secTarState);
+                                     that.enableSet = true;
                                      }
                                      }});
                     break;
@@ -359,6 +364,7 @@ function HttpAccessory(log, config)
                 that.log(that.service, "received current heat setpoint",that.set_target_heat_url, "heat setpoint is currently", value);
                 that.thermHeatSet = parseFloat(value);
                 
+                var state = that.thermTarState;
                 if( that.thermTarState == Characteristic.TargetHeatingCoolingState.AUTO)
                 {
                     //Need to adjust the state here because HomeKit doesn't allow a current state of auto.
@@ -404,7 +410,7 @@ function HttpAccessory(log, config)
                 that.log(that.service, "received current cool setpoint",that.set_target_cool_url, "cool setpoint is currently", value);
                 that.thermCoolSet = parseFloat(value);
          
-                var state = Characteristic.TargetHeatingCoolingState.OFF;       
+                var state = that.thermTarState;      
                 if( that.thermTarState == Characteristic.TargetHeatingCoolingState.AUTO)
                 {
                     //Need to adjust the state here because HomeKit doesn't allow a current state of auto.
@@ -460,10 +466,12 @@ function HttpAccessory(log, config)
                                      } else {
                                      that.secTarState = 0;
                                      }
+                                     that.enableSet = false;
                                      that.securityService.getCharacteristic(Characteristic.SecuritySystemCurrentState).
                                      setValue(that.secCurState);
                                      that.securityService.getCharacteristic(Characteristic.SecuritySystemTargetState).
                                      setValue(that.secTarState);
+                                     that.enableSet = true;
                                      }
                                      }});
                     break;
@@ -583,6 +591,7 @@ function HttpAccessory(log, config)
         this.lastState = true;
     this.secTarState = 3;
     this.secCurState = 3;
+    this.targetGarageDoorState = Characteristic.TargetDoorState.CLOSED;
     this.currentlevel = 0;
     this.enableSet = true;
     this.enableSetState = true;
@@ -664,8 +673,9 @@ function HttpAccessory(log, config)
                                  case "Garage Door":
                                    if( that.garageService )
                                    {
-                                     that.garageService.getCharacteristic(Characteristic.CurrentDoorState).setValue(that.state?Characteristic.CurrentDoorState.CLOSED:Characteristic.CurrentDoorState.OPEN);
-                                     that.garageService.getCharacteristic(Characteristic.TargetDoorState).setValue(that.state?Characteristic.TargetDoorState.CLOSED:Characteristic.TargetDoorState.OPEN);
+                                     that.targetGarageDoorState = that.state?Characteristic.CurrentDoorState.CLOSED:Characteristic.CurrentDoorState.OPEN;
+                                     that.garageService.getCharacteristic(Characteristic.CurrentDoorState).setValue(that.targetGarageDoorState);
+                                     that.garageService.getCharacteristic(Characteristic.TargetDoorState).setValue(that.targetGarageDoorState);
                                    }
                                    break;
                                  case "Lock":
@@ -890,7 +900,7 @@ function HttpAccessory(log, config)
                                      that.thermHeatSet = parseFloat(data);
                                      that.log(that.service, "received hvac heat setpoint",that.get_target_heat_url, "hvac heat setpoint is currently", data);
 
-                                     var state = Characteristic.TargetHeatingCoolingState.OFF;
+                                     var state = that.thermTarState;
                                      if( that.thermTarState == Characteristic.TargetHeatingCoolingState.AUTO)
                                      {
                                         //Need to adjust the state here because HomeKit doesn't allow a current state of auto.
@@ -953,7 +963,7 @@ function HttpAccessory(log, config)
                                         that.thermCoolSet = parseFloat(data);
                                         that.log(that.service, "received hvac cool setpoint",that.get_target_cool_url, "hvac cool setpoint is currently", data);
                                       
-                                        var state = Characteristic.TargetHeatingCoolingState.OFF;
+                                        var state = that.thermTarState;
                                         if( that.thermTarState == Characteristic.TargetHeatingCoolingState.AUTO)
                                         {
                                             //Need to adjust the state here because HomeKit doesn't allow a current state of auto.
@@ -1076,7 +1086,8 @@ function HttpAccessory(log, config)
                         function(data)
                         {
                           that.currentlevel = parseInt(data);
-                        
+                          that.state = that.currentlevel > 0;
+
                           that.enableSet = false;
                         
                           switch (that.service)
@@ -1087,6 +1098,7 @@ function HttpAccessory(log, config)
                               {
                                 that.log(that.service, "received brightness",that.brightnesslvl_url, "level is currently", that.currentlevel);
                                 that.lightbulbService.getCharacteristic(Characteristic.Brightness).setValue(that.currentlevel);
+                                that.lightbulbService.getCharacteristic(Characteristic.On).setValue(that.state);
                               }
                               break;
                             case "Fan":
@@ -1094,6 +1106,7 @@ function HttpAccessory(log, config)
                               {
                                 that.log(that.service, "received fan level",that.brightnesslvl_url, "level is currently", that.currentlevel);
                                 that.fanService.getCharacteristic(Characteristic.RotationSpeed).setValue(that.currentlevel*25);
+                                that.fanService.getCharacteristic(Characteristic.On).setValue(that.state);
                               }
                               break;
                             }
@@ -1134,11 +1147,9 @@ HttpAccessory.prototype =
     
   setSecurityState: function(newState, callback)
                {
+                 var that = this;
                  if (this.enableSet == true)
                  {
-                   var url;
-                   var body;
-        
                    if (!this.state_url)
                    {
                      this.log.warn("Ignoring request; No security state url defined.");
@@ -1150,23 +1161,29 @@ HttpAccessory.prototype =
                      newState = 0;
         
                    this.secTarState = newState;
-                   url = this.state_url.replace("%s", newState);
-                   this.log("Setting new security state: "+url);
-        
-                   this.httpRequest(url, body, this.http_method, this.username, this.password, this.sendimmediately,
+
+                   setTimeout(function() {  
+                   var url;
+                   var body;
+
+                   url = that.state_url.replace("%s", that.secTarState);
+                   that.log("Setting new security state: "+url);
+      
+                   that.httpRequest(url, body, that.http_method, that.username, that.password, that.sendimmediately,
                                     function(error, response, responseBody)
                                     {
                                       if (error)
                                       {
-                                        this.log('HTTP set security state function failed: %s', error.message);
+                                        that.log('HTTP set security state function failed: %s', error.message);
                                         callback(error);
                                       }
                                       else
                                       {
-                                        this.log('HTTP set security state function succeeded!');
+                                        that.log('HTTP set security state function succeeded!');
                                         callback();
                                       }
-                                    }.bind(this));
+                                    }.bind(that));
+                   },1000);
                  }
                  else
                  {
@@ -1176,10 +1193,20 @@ HttpAccessory.prototype =
     
   setPowerState: function(powerOn, callback)
                {
+                 var that = this;
+                 if( this.enable_level && this.brightness_url )
+                 {
+                   this.setBrightness(powerOn?100:0,callback);
+                   return;
+                 }
+
                  if (this.enableSet == true && (this.currentlevel == 0 || !powerOn ))
                  {
                    var url;
                    var body;
+
+                   if( this.enable_level )
+                     this.state = powerOn;
         
                    if (!this.on_url || !this.off_url)
                    {
@@ -1199,8 +1226,8 @@ HttpAccessory.prototype =
                      url = this.off_url;
                      body = this.off_body;
                      this.log("Setting power state to off");
-                   }
-        
+                   } 
+
                    this.httpRequest(url, body, this.http_method, this.username, this.password, this.sendimmediately,
                                     function(error, response, responseBody)
                                     {
@@ -1222,67 +1249,15 @@ HttpAccessory.prototype =
                 }
               },
     
-  getPowerState: function(callback)
-               {
-                 if (!this.status_url)
-                 {
-                   this.log.warn("Ignoring request; No status url defined.");
-                   callback(new Error("No status url defined."));
-                   return;
-                 }
-    
-                 var url = this.status_url;
-                 this.log("Getting power state");
-    
-                 this.httpRequest(url, "", "GET", this.username, this.password, this.sendimmediately,
-                                  function(error, response, responseBody)
-                                  {
-                                    if (error)
-                                    {
-                                      this.log('HTTP get power function failed: %s', error.message);
-                                      callback(error);
-                                    }
-                                    else
-                                    {
-                                      var binaryState = parseInt(responseBody.replace(/\D/g,""));
-                                      var powerOn = binaryState > 0;
-                                      this.log("Power state is currently %s", binaryState);
-                                      callback(null, powerOn);
-                                    }
-                                  }.bind(this));
-               },
-    
-  getBrightness: function(callback)
-               {
-                 if (!this.brightnesslvl_url)
-                 {
-                   this.log.warn("Ignoring request; No brightness level url defined.");
-                   callback(new Error("No brightness level url defined."));
-                   return;
-                 }
-                 var url = this.brightnesslvl_url;
-                 this.log("Getting Brightness level");
-    
-                 this.httpRequest(url, "", "GET", this.username, this.password, this.sendimmediately,
-                                  function(error, response, responseBody)
-                                  {
-                                    if (error)
-                                    {
-                                      this.log('HTTP get brightness function failed: %s', error.message);
-                                      callback(error);
-                                    }
-                                    else
-                                    {
-                                      var binaryState = parseInt(responseBody.replace(/\D/g,""));
-                                      var level = binaryState;
-                                      this.log("brightness state is currently %s", binaryState);
-                                      callback(null, level);
-                                    }
-                                  }.bind(this));
-  },
-    
   setBrightness: function(level, callback)
                {
+                 var that = this;
+                 if( !this.enable_level )
+                 {
+                   callback();
+                   return;
+                 }
+
                  if (this.enableSet == true)
                  {
                    if (!this.brightness_url)
@@ -1295,24 +1270,28 @@ HttpAccessory.prototype =
                    if( this.service == "Fan" )
                        level = Math.round(level/25);
         
-                   var url = this.brightness_url.replace("%b", level)
+                   this.currentlevel = level;
+
+                   setTimeout(function() {
+                     var url = that.brightness_url.replace("%b", that.currentlevel)
         
-                   this.log("Setting brightness to %s", level);
+                     that.log("Setting brightness to %s", level);
         
-                   this.httpRequest(url, "", this.http_brightness_method, this.username, this.password, this.sendimmediately,
-                                    function(error, response, body)
-                                    {
-                                      if (error)
+                     that.httpRequest(url, "", that.http_brightness_method, that.username, that.password, that.sendimmediately,
+                                      function(error, response, body)
                                       {
-                                        this.log('HTTP brightness function failed: %s', error);
-                                        callback(error);
-                                      }
-                                      else
-                                      {
-                                        this.log('HTTP brightness function succeeded!');
-                                        callback();
-                                      }
-                                    }.bind(this));
+                                        if (error)
+                                        {
+                                          that.log('HTTP brightness function failed: %s', error);
+                                          callback(error);
+                                        }
+                                        else
+                                        {
+                                          that.log('HTTP brightness function succeeded!');
+                                          callback();
+                                        }
+                                      }.bind(that));
+                    },300);
                  }
                  else
                  {
@@ -1322,6 +1301,7 @@ HttpAccessory.prototype =
 
   setThermostatTargetHeatingCoolingState: function(state, callback)
                {
+                   var that = this;
                    if( !this.enableSetState )
                    {
                        callback();
@@ -1352,7 +1332,9 @@ HttpAccessory.prototype =
                    {
                        mode = this.auto_string;
                    }
-                   
+ 
+                   this.thermTarState = mode;
+                  
                    var url = this.set_mode_url.replace("%m", mode);
                    
                    this.log("Setting hvac mode to %s", mode);
@@ -1368,6 +1350,48 @@ HttpAccessory.prototype =
                                         else
                                         {
                                             this.log('HTTP HVAC mode function succeeded!');
+
+                                            if( that.thermTarState == Characteristic.TargetHeatingCoolingState.AUTO)
+                                            {
+                                             //Need to adjust the state here because HomeKit doesn't allow a current state of auto.
+                                             if( that.thermCurrentTemp != -100 && that.thermCoolSet != -100 && that.thermHeatSet != -100 )
+                                             {
+                                               var coolDiff = that.thermCurrentTemp - that.thermCoolSet;
+                                               if( coolDiff < 0 )
+                                                 coolDiff = coolDiff*-1;
+
+                                               var heatDiff = that.thermCurrentTemp - that.thermHeatSet;
+                                               if( heatDiff < 0 )
+                                                 heatDiff = heatDiff*-1;
+
+                                               if( coolDiff < heatDiff )
+                                                 state = Characteristic.TargetHeatingCoolingState.COOL;
+                                               else
+                                                 state = Characteristic.TargetHeatingCoolingState.HEAT;
+                                            }
+                                            else
+                                            {
+                                              state = Characteristic.TargetHeatingCoolingState.OFF;
+                                            }
+                                           }
+
+                                           that.enableSetTemp = false;
+                                           if( state == Characteristic.TargetHeatingCoolingState.COOL && that.thermCoolSet != -100 )
+                                           {
+                                             if( that.thermCoolSet >= 10 && that.thermCoolSet <= 38 )
+                                               that.thermostatService.getCharacteristic(Characteristic.TargetTemperature).setValue(that.thermCoolSet);
+                                             else
+                                               that.log(that.service,"Current cool setpoint is outside of range.  Cannot set target temperature: ",that.thermCoolSet);
+                                           }
+                                           if( state == Characteristic.TargetHeatingCoolingState.HEAT && that.thermHeatSet != -100 )
+                                           {
+                                             if( that.thermHeatSet >= 10 && that.thermHeatSet <= 38 )
+                                               that.thermostatService.getCharacteristic(Characteristic.TargetTemperature).setValue(that.thermHeatSet);
+                                             else
+                                               that.log(that.service,"Current heat setpoint is outside of range.  Cannot set target temperature: ",that.thermHeatSet);
+                                           }
+                                           that.enableSetTemp = true;
+
                                             callback();
                                         }
                                     }.bind(this));
@@ -1375,6 +1399,7 @@ HttpAccessory.prototype =
 
   setThermostatTargetTemp: function(temp, callback)
                {
+                   var that = this;
                    if( !this.enableSetTemp )
                    {
                        callback();
@@ -1473,7 +1498,7 @@ HttpAccessory.prototype =
                               case "realtime":
                                   this.switchService
                                     .getCharacteristic(Characteristic.On)
-                                    .on('get', this.getPowerState.bind(this))
+                                    .on('get', function(callback){ callback(null,that.state)})
                                     .on('set', this.setPowerState.bind(this));
                                   break;
                               default	:
@@ -1496,7 +1521,7 @@ HttpAccessory.prototype =
                               case "realtime" :
                                   this.lightbulbService
                                     .getCharacteristic(Characteristic.On)
-                                    .on('get', this.getPowerState.bind(this))
+                                    .on('get', function(callback){ callback(null,that.state)})
                                     .on('set', this.setPowerState.bind(this));
                                   break;
                               default:
@@ -1511,7 +1536,7 @@ HttpAccessory.prototype =
                           {
                               this.lightbulbService
                                 .addCharacteristic(new Characteristic.Brightness())
-                                .on('get', this.getBrightness.bind(this))
+                                .on('get', function(callback) {callback(null,that.currentlevel)})
                                 .on('set', this.setBrightness.bind(this));
                           }
             
@@ -1548,7 +1573,7 @@ HttpAccessory.prototype =
                           
                           this.windowService
                             .getCharacteristic(Characteristic.TargetPosition)
-                            .on('get', this.getPowerState.bind(this))
+                            .on('get', function(callback) {callback(null,that.state?0:100)})
                             .on('set', this.setPowerState.bind(this));
                           
                           this.windowService
@@ -1568,7 +1593,7 @@ HttpAccessory.prototype =
                           
                           this.garageService
                             .getCharacteristic(Characteristic.TargetDoorState)
-                            .on('get', this.getPowerState.bind(this))
+                            .on('get', function(callback) {callback(null,that.targetGarageDoorState)})
                             .on('set', this.setPowerState.bind(this));
                           
                           this.garageService
@@ -1640,7 +1665,7 @@ HttpAccessory.prototype =
                           this.fanService = new Service.Fan(this.name);
                           this.fanService
                             .getCharacteristic(Characteristic.On)
-                            .on('get', this.getPowerState.bind(this))
+                            .on('get', function(callback) {callback(null,that.state)})
                             .on('set', this.setPowerState.bind(this));
                           
                           // Brightness Polling
@@ -1648,7 +1673,7 @@ HttpAccessory.prototype =
                           {
                               this.fanService
                                 .addCharacteristic(new Characteristic.RotationSpeed())
-                                .on('get', this.getBrightness.bind(this))
+                                .on('get', function(callback) {callback(null,that.currentlevel*25)})
                                 .on('set', this.setBrightness.bind(this))
                                 .setProps({minStep:25});
                           }
