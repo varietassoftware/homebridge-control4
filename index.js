@@ -1194,9 +1194,15 @@ HttpAccessory.prototype =
   setPowerState: function(powerOn, callback)
                {
                  var that = this;
-                 if( this.enable_level && this.brightness_url )
+                 if( this.enable_level && this.brightness_url && ((this.currentlevel == 0 && powerOn) || (this.currentlevel > 0 && !powerOn))  )
                  {
                    this.setBrightness(powerOn?100:0,callback);
+                   return;
+                 }
+                 else if( this.enable_level && this.brightness_url )
+                 {
+                   this.log("Called set power state, but power is already at appropriate state. Doing nothing.");
+                   callback();
                    return;
                  }
 
@@ -1288,6 +1294,10 @@ HttpAccessory.prototype =
                                         else
                                         {
                                           that.log('HTTP brightness function succeeded!');
+                                          that.enableSet = false;
+                                          that.lightbulbService.getCharacteristic(Characteristic.On).setValue(that.currentlevel>0);
+                                          that.lightbulbService.getCharacteristic(Characteristic.Brightness).setValue(that.currentlevel);
+                                          that.enableSet = true;
                                           callback();
                                         }
                                       }.bind(that));
