@@ -98,7 +98,7 @@ function HttpAccessory(log, config)
                 case "Dimmer":
                     if (that.lightbulbService) {
                         that.lightbulbService.getCharacteristic(Characteristic.On)
-                        .setValue(that.state);
+                        .setValue(that.state||that.currentlevel>0);
                     }
                     break;
                 case "Door":
@@ -206,6 +206,7 @@ function HttpAccessory(log, config)
         else if( prop == 1001 )
         {
             that.currentlevel = parseInt(value);
+            that.state = that.currentlevel > 0;
             
             that.enableSet = false;
             switch (that.service) {
@@ -215,6 +216,8 @@ function HttpAccessory(log, config)
                         that.log(that.service, "received brightness",that.brightnesslvl_url, "level is currently", that.currentlevel);
                         that.lightbulbService.getCharacteristic(Characteristic.Brightness)
                         .setValue(that.currentlevel);
+                        that.lightbulbService.getCharacteristic(Characteristic.On)
+                        .setValue(that.state);
                     }
                     break;
                 case "Fan":
@@ -602,7 +605,8 @@ function HttpAccessory(log, config)
     this.thermCoolSet = -100;
     this.thermCurrentTemp = -100;
     this.thermTarState = Characteristic.TargetHeatingCoolingState.OFF;
-    
+    this.garageCheck = -1;
+
     // Status Polling, if you want to add additional services that don't use switch handling you can add something like this || (this.service=="Smoke" || this.service=="Motion"))
     if (this.status_url && this.switchHandling =="realtime")
     {
@@ -651,7 +655,7 @@ function HttpAccessory(log, config)
                                  case "Dimmer":
                                    if (that.lightbulbService)
                                    {
-                                     that.lightbulbService.getCharacteristic(Characteristic.On).setValue(that.state);
+                                     that.lightbulbService.getCharacteristic(Characteristic.On).setValue(that.state||that.currentlevel>0);
                                    }
                                    break;
                                  case "Door":
@@ -1246,6 +1250,51 @@ HttpAccessory.prototype =
                                       {
                                         this.log('HTTP set power function succeeded!');
                                         callback();
+
+                                        if(this.garageService)
+                                        {
+                                          if( this.garageCheck != -1 )
+                                          {
+                                            clearInterval(this.garageCheck);
+                                            this.garageCheck = -1;
+                                          }
+                                          this.garageCheckCount = 0;
+
+                                          this.garageCheck = setInterval(function()
+                                          {
+                                            this.garageCheckCount++;
+                                            if( this.garageCheckCount > 30 )
+                                            {
+                                              if( this.garageCheck != -1 )
+                                              {
+                                                clearInterval(this.garageCheck);
+                                                this.garageCheck = -1;
+                                              }
+                                              return;
+                                            }
+
+                                            this.httpRequest(this.status_url, "", "GET", this.username, this.password, this.sendimmediately,
+                                                             function(error, response, body)
+                                                             {
+                                                               if (error)
+                                                               {
+                                                                 this.log('HTTP get power function failed: %s', error.message);
+                                                                 return;
+                                                               }
+                                                               else
+                                                               {
+                                                                 var binaryState = parseInt(body.replace(/\D/g,""));
+                                                                 this.state = binaryState > 0;
+                                                                 this.log(this.service, "received power",this.status_url, "state is currently", binaryState);
+
+                                                                 this.enableSet = false;
+                                                                 this.garageService.getCharacteristic(Characteristic.CurrentDoorState)
+                                                                         .setValue(this.state?Characteristic.CurrentDoorState.CLOSED:Characteristic.CurrentDoorState.OPEN);
+                                                                 this.enableSet = true;
+                                                               }
+                                                             }.bind(this))
+                                          }.bind(this),1000);
+                                        }
                                       }
                                     }.bind(this));
                 }
@@ -1531,7 +1580,7 @@ HttpAccessory.prototype =
                               case "realtime" :
                                   this.lightbulbService
                                     .getCharacteristic(Characteristic.On)
-                                    .on('get', function(callback){ callback(null,that.state)})
+                                    .on('get', function(callback){ callback(null,that.state||that.currentlevel>0)})
                                     .on('set', this.setPowerState.bind(this));
                                   break;
                               default:
