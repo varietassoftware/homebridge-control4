@@ -1161,9 +1161,6 @@ HttpAccessory.prototype =
                      return;
                    }
         
-                   if( newState == 2 )
-                     newState = 0;
-        
                    this.secTarState = newState;
 
                    setTimeout(function() {  
