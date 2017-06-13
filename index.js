@@ -1341,8 +1341,14 @@ HttpAccessory.prototype =
                                         {
                                           that.log('HTTP brightness function succeeded!');
                                           that.enableSet = false;
-                                          that.lightbulbService.getCharacteristic(Characteristic.On).setValue(that.currentlevel>0);
-                                          that.lightbulbService.getCharacteristic(Characteristic.Brightness).setValue(that.currentlevel);
+                                          if( that.lightbulbService ) {
+                                            that.lightbulbService.getCharacteristic(Characteristic.On).setValue(that.currentlevel>0);
+                                            that.lightbulbService.getCharacteristic(Characteristic.Brightness).setValue(that.currentlevel);
+                                          }
+                                          if( that.fanService ) {
+                                            that.fanService.getCharacteristic(Characteristic.On).setValue(that.currentlevel>0);
+                                            that.fanService.getCharacteristic(Characteristic.Brightness).setValue(that.currentlevel);
+                                          }
                                           that.enableSet = true;
                                           callback();
                                         }
