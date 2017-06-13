@@ -1347,7 +1347,7 @@ HttpAccessory.prototype =
                                           }
                                           if( that.fanService ) {
                                             that.fanService.getCharacteristic(Characteristic.On).setValue(that.currentlevel>0);
-                                            that.fanService.getCharacteristic(Characteristic.Brightness).setValue(that.currentlevel);
+                                            that.fanService.getCharacteristic(Characteristic.RotationSpeed).setValue(that.currentlevel*25);
                                           }
                                           that.enableSet = true;
                                           callback();
