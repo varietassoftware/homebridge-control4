@@ -140,8 +140,12 @@ function HttpAccessory(log, config)
                     break;
                 case "Contact":
                     if( that.contactService ) {
+                        var toCheck = true;
+                        if( that.invert_contact == "yes" ) {
+                          toCheck = false;
+                        }
                         that.contactService.getCharacteristic(Characteristic.ContactSensorState)
-                        .setValue(that.state?Characteristic.ContactSensorState.CONTACT_DETECTED:Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
+                        .setValue((that.state==toCheck)?Characteristic.ContactSensorState.CONTACT_DETECTED:Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
                     }
                     break;
                 case "Doorbell":
@@ -692,7 +696,11 @@ function HttpAccessory(log, config)
                                  case "Contact":
                                    if( that.contactService )
                                    {
-                                     that.contactService.getCharacteristic(Characteristic.ContactSensorState).setValue(that.state?Characteristic.ContactSensorState.CONTACT_DETECTED:Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
+                                     var toCheck = true;
+                                     if( that.invert_contact == "yes" ) {
+                                       toCheck = false;
+                                     }
+                                     that.contactService.getCharacteristic(Characteristic.ContactSensorState).setValue((that.state==toCheck)?Characteristic.ContactSensorState.CONTACT_DETECTED:Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
                                    }
                                    break;
                                  case "Doorbell":
@@ -1688,7 +1696,11 @@ HttpAccessory.prototype =
                           this.contactService
                             .getCharacteristic(Characteristic.ContactSensorState)
                             .on('get', function(callback) {
-                                callback(null,that.state?Characteristic.ContactSensorState.CONTACT_DETECTED:Characteristic.ContactSensorState.CONTACT_NOT_DETECTED)
+                                var toCheck = true;
+                                if( that.invert_contact == "yes" ) {
+                                  toCheck = false;
+                                }
+                                callback(null,(that.state==toCheck)?Characteristic.ContactSensorState.CONTACT_DETECTED:Characteristic.ContactSensorState.CONTACT_NOT_DETECTED)
                                 });
                           
                           return [informationService, this.contactService];

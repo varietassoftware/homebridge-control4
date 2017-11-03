@@ -19,7 +19,8 @@
  "brightnessHandling":"realtime",
    "refresh_interval":900000,
        "manufacturer":"Control4",
-              "model":"ldz-102-w"
+              "model":"ldz-102-w",
+     "invert_contact":"no"
          }
     ]
 }
