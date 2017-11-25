@@ -63,9 +63,13 @@ function HttpAccessory(log, config)
         this.get_temperature_url   = this.base_url + "/temperature";
         
         this.cool_string = config["cool_string"] || "Cool";
+        this.cool_state = config["cool_state"] || Characteristic.TargetHeatingCoolingState.COOL;
         this.heat_string = config["heat_string"] || "Heat";
+        this.heat_state = config["cool_state"] || Characteristic.TargetHeatingCoolingState.HEAT;
         this.off_string = config["off_string"] || "Off";
+        this.off_state = config["cool_state"] || Characteristic.TargetHeatingCoolingState.OFF;
         this.auto_string = config["auto_string"] || "Auto";
+        this.auto_state = config["cool_state"] || Characteristic.TargetHeatingCoolingState.AUTO;
     }
     
     var that = this;
@@ -260,21 +264,21 @@ function HttpAccessory(log, config)
         }
         else if( prop == 1107 ) // HVAC Status
         {
-            var state = Characteristic.TargetHeatingCoolingState.OFF;
+            var state = that.off_state;
             if( value.includes(that.cool_string) )
             {   
-                state = Characteristic.TargetHeatingCoolingState.COOL;
+                state = that.cool_state;
             }
             else if( value.includes(that.heat_string) )
             {   
-                state = Characteristic.TargetHeatingCoolingState.HEAT;
+                state = that.heat_state;
             }
             else if( value.includes(that.auto_string) )
             {   
-                state = Characteristic.TargetHeatingCoolingState.AUTO;
+                state = that.auto_state;
             }
   
-            if( state >= 0 && state <= 2 )
+            if( state >= 0 && state <= 3 )
             {
               that.thermStatus = state;
               that.log(that.service, "received hvac status",that.get_status_url, "hvac status is currently", value);
@@ -289,25 +293,25 @@ function HttpAccessory(log, config)
         {
             that.enableSetTemp = false;
             that.enableSetState = false;
-            var state = Characteristic.TargetHeatingCoolingState.OFF;
+            var state = that.off_state;
             if( value == that.cool_string )
             {
-                state = Characteristic.TargetHeatingCoolingState.COOL;
+                state = that.cool_state;
             }
             else if( value == that.heat_string )
             {
-                state = Characteristic.TargetHeatingCoolingState.HEAT;
+                state = that.heat_state;
             }
             else if( value == that.auto_string )
             {
-                state = Characteristic.TargetHeatingCoolingState.AUTO;
+                state = that.auto_state;
             }
             
             that.log(that.service, "received hvac mode",that.get_mode_url, "hvac mode is currently", state, "from value", value);
             that.thermTarState = state;
             that.thermostatService.getCharacteristic(Characteristic.TargetHeatingCoolingState).setValue(that.thermTarState);
             
-            if( that.thermTarState == Characteristic.TargetHeatingCoolingState.AUTO)
+            if( that.thermTarState == that.auto_state)
             {
                 //Need to adjust the state here because HomeKit doesn't allow a current state of auto.
                 if( that.thermCurrentTemp != -100 && that.thermCoolSet != -100 && that.thermHeatSet != -100 )
@@ -321,24 +325,24 @@ function HttpAccessory(log, config)
                         heatDiff = heatDiff*-1;
                     
                     if( coolDiff < heatDiff )
-                        state = Characteristic.TargetHeatingCoolingState.COOL;
+                        state = that.cool_state;
                     else
-                        state = Characteristic.TargetHeatingCoolingState.HEAT;
+                        state = that.heat_state;
                 }
                 else
                 {
-                    state = Characteristic.TargetHeatingCoolingState.OFF;
+                    state = that.off_state;
                 }
             }
             
-            if( state == Characteristic.TargetHeatingCoolingState.COOL && that.thermCoolSet != -100 )
+            if( state == that.cool_state && that.thermCoolSet != -100 )
             {
                 if( that.thermCoolSet >= 10 && that.thermCoolSet <= 38 )
                   that.thermostatService.getCharacteristic(Characteristic.TargetTemperature).setValue(that.thermCoolSet);
                 else
                   that.log(that.service, "Cool setpoint is outside of valid range.  Cannot set target temperature: ",that.thermCoolSet);
             }
-            if( state == Characteristic.TargetHeatingCoolingState.HEAT && that.thermHeatSet != -100 )
+            if( state == that.heat_state && that.thermHeatSet != -100 )
             {
                 if( that.thermHeatSet >= 10 && that.thermHeatSet <= 38 )
                   that.thermostatService.getCharacteristic(Characteristic.TargetTemperature).setValue(that.thermHeatSet);
@@ -365,14 +369,14 @@ function HttpAccessory(log, config)
             that.enableSetTemp = false;
             that.enableSetState = false;
 
-            var state = Characteristic.TargetHeatingCoolingState.OFF;
+            var state = that.off_state;
             if( that.thermostatService )
             {
                 that.log(that.service, "received current heat setpoint",that.set_target_heat_url, "heat setpoint is currently", value);
                 that.thermHeatSet = parseFloat(value);
                 
                 var state = that.thermTarState;
-                if( that.thermTarState == Characteristic.TargetHeatingCoolingState.AUTO)
+                if( that.thermTarState == that.auto_state)
                 {
                     //Need to adjust the state here because HomeKit doesn't allow a current state of auto.
                     if( that.thermCurrentTemp != -100 && that.thermCoolSet != -100 && that.thermHeatSet != -100 )
@@ -386,17 +390,17 @@ function HttpAccessory(log, config)
                             heatDiff = heatDiff*-1;
                         
                         if( coolDiff < heatDiff )
-                            state = Characteristic.TargetHeatingCoolingState.COOL;
+                            state = that.cool_state;
                         else
-                            state = Characteristic.TargetHeatingCoolingState.HEAT;
+                            state = that.heat_state;
                     }
                     else
                     {
-                        state = Characteristic.TargetHeatingCoolingState.OFF;
+                        state = that.off_state;
                     }
                 }
                 
-                if( state == Characteristic.TargetHeatingCoolingState.HEAT )
+                if( state == that.heat_state )
                 {
                     if( that.thermHeatSet >= 10 && that.thermHeatSet <= 38 )
                       that.thermostatService.getCharacteristic(Characteristic.TargetTemperature).setValue(that.thermHeatSet);
@@ -418,7 +422,7 @@ function HttpAccessory(log, config)
                 that.thermCoolSet = parseFloat(value);
          
                 var state = that.thermTarState;      
-                if( that.thermTarState == Characteristic.TargetHeatingCoolingState.AUTO)
+                if( that.thermTarState == that.auto_state)
                 {
                     //Need to adjust the state here because HomeKit doesn't allow a current state of auto.
                     if( that.thermCurrentTemp != -100 && that.thermCoolSet != -100 && that.thermHeatSet != -100 )
@@ -432,17 +436,17 @@ function HttpAccessory(log, config)
                             heatDiff = heatDiff*-1;
                         
                         if( coolDiff < heatDiff )
-                            state = Characteristic.TargetHeatingCoolingState.COOL;
+                            state = that.cool_state;
                         else
-                            state = Characteristic.TargetHeatingCoolingState.HEAT;
+                            state = that.heat_state;
                     }
                     else
                     {
-                        state = Characteristic.TargetHeatingCoolingState.OFF;
+                        state = that.off_state;
                     }
                 }
                 
-                if( state == Characteristic.TargetHeatingCoolingState.COOL )
+                if( state == that.cool_state )
                 {
                     if( that.thermCoolSet >= 10 && that.thermCoolSet <= 38 )
                       that.thermostatService.getCharacteristic(Characteristic.TargetTemperature).setValue(that.thermCoolSet);
@@ -603,12 +607,12 @@ function HttpAccessory(log, config)
     this.enableSet = true;
     this.enableSetState = true;
     this.enableSetTemp = true;
-    this.thermCurState = Characteristic.TargetHeatingCoolingState.OFF;
-    this.thermStatus = Characteristic.TargetHeatingCoolingState.OFF;
+    this.thermCurState = this.off_state;
+    this.thermStatus = this.off_state;
     this.thermHeatSet = -100;
     this.thermCoolSet = -100;
     this.thermCurrentTemp = -100;
-    this.thermTarState = Characteristic.TargetHeatingCoolingState.OFF;
+    this.thermTarState = this.off_state;
     this.garageCheck = -1;
 
     // Status Polling, if you want to add additional services that don't use switch handling you can add something like this || (this.service=="Smoke" || this.service=="Motion"))
@@ -777,14 +781,14 @@ function HttpAccessory(log, config)
             hvacstatusemitter.on("hvacstatuspoll",
                                function(data)
                                {
-                                 var state = Characteristic.TargetHeatingCoolingState.OFF;
+                                 var state = that.off_state;
                                  if( data.includes(that.cool_string) )
                                  {
-                                    state = Characteristic.TargetHeatingCoolingState.COOL;
+                                    state = that.cool_state;
                                  }
                                  else if( data.includes(that.heat_string) )
                                  {
-                                    state = Characteristic.TargetHeatingCoolingState.HEAT;
+                                    state = that.heat_state;
                                  }
                                  that.thermCurState = state;
 
@@ -823,18 +827,18 @@ function HttpAccessory(log, config)
             hvacmodeemitter.on("hvacstatepoll",
                                function(data)
                                {
-                                 var state = Characteristic.TargetHeatingCoolingState.OFF;
+                                 var state = that.off_state;
                                  if( data == that.cool_string )
                                  {
-                                    state = Characteristic.TargetHeatingCoolingState.COOL;
+                                    state = that.cool_state;
                                  }
                                  else if( data == that.heat_string )
                                  {
-                                    state = Characteristic.TargetHeatingCoolingState.HEAT;
+                                    state = that.heat_state;
                                  }
                                  else if( data == that.auto_string )
                                  {
-                                    state = Characteristic.TargetHeatingCoolingState.AUTO;
+                                    state = that.auto_state;
                                  }
                                
                                  that.log(that.service, "received hvac mode",that.get_mode_url, "hvac mode is currently", data);
@@ -843,7 +847,7 @@ function HttpAccessory(log, config)
                                  that.thermostatService.getCharacteristic(Characteristic.TargetHeatingCoolingState).setValue(that.thermTarState);
                                  that.enableSetState = true;
 
-                                 if( that.thermTarState == Characteristic.TargetHeatingCoolingState.AUTO)
+                                 if( that.thermTarState == that.auto_state)
                                  {
                                     //Need to adjust the state here because HomeKit doesn't allow a current state of auto.
                                     if( that.thermCurrentTemp != -100 && that.thermCoolSet != -100 && that.thermHeatSet != -100 )
@@ -857,25 +861,25 @@ function HttpAccessory(log, config)
                                             heatDiff = heatDiff*-1;
                                
                                         if( coolDiff < heatDiff )
-                                            state = Characteristic.TargetHeatingCoolingState.COOL;
+                                            state = that.cool_state;
                                         else
-                                            state = Characteristic.TargetHeatingCoolingState.HEAT;
+                                            state = that.heat_state;
                                     }
                                     else
                                     {
-                                        state = Characteristic.TargetHeatingCoolingState.OFF;
+                                        state = that.off_state;
                                     }
                                  }
                                
                                  that.enableSetTemp = false;
-                                 if( state == Characteristic.TargetHeatingCoolingState.COOL && that.thermCoolSet != -100 )
+                                 if( state == that.cool_state && that.thermCoolSet != -100 )
                                  {
                                     if( that.thermCoolSet >= 10 && that.thermCoolSet <= 38 )
                                       that.thermostatService.getCharacteristic(Characteristic.TargetTemperature).setValue(that.thermCoolSet);
                                     else
                                       that.log(that.service,"Current cool setpoint is outside of range.  Cannot set target temperature: ",that.thermCoolSet);
                                  }
-                                 if( state == Characteristic.TargetHeatingCoolingState.HEAT && that.thermHeatSet != -100 )
+                                 if( state == that.heat_state && that.thermHeatSet != -100 )
                                  {
                                     if( that.thermHeatSet >= 10 && that.thermHeatSet <= 38 )
                                       that.thermostatService.getCharacteristic(Characteristic.TargetTemperature).setValue(that.thermHeatSet);
@@ -913,7 +917,7 @@ function HttpAccessory(log, config)
                                      that.log(that.service, "received hvac heat setpoint",that.get_target_heat_url, "hvac heat setpoint is currently", data);
 
                                      var state = that.thermTarState;
-                                     if( that.thermTarState == Characteristic.TargetHeatingCoolingState.AUTO)
+                                     if( that.thermTarState == that.auto_state)
                                      {
                                         //Need to adjust the state here because HomeKit doesn't allow a current state of auto.
                                         if( that.thermCurrentTemp != -100 && that.thermCoolSet != -100 && that.thermHeatSet != -100 )
@@ -927,18 +931,18 @@ function HttpAccessory(log, config)
                                                 heatDiff = heatDiff*-1;
                                       
                                             if( coolDiff < heatDiff )
-                                                state = Characteristic.TargetHeatingCoolingState.COOL;
+                                                state = that.cool_state;
                                             else
-                                                state = Characteristic.TargetHeatingCoolingState.HEAT;
+                                                state = that.heat_state;
                                         }
                                         else
                                         {
-                                            state = Characteristic.TargetHeatingCoolingState.OFF;
+                                            state = that.off_state;
                                         }
                                      }
 
                                      that.enableSetTemp = false;
-                                     if( state == Characteristic.TargetHeatingCoolingState.HEAT )
+                                     if( state == that.heat_state )
                                      {
                                        if( that.thermHeatSet >= 10 && that.thermHeatSet <= 38 )
                                          that.thermostatService.getCharacteristic(Characteristic.TargetTemperature).setValue(that.thermHeatSet);
@@ -976,7 +980,7 @@ function HttpAccessory(log, config)
                                         that.log(that.service, "received hvac cool setpoint",that.get_target_cool_url, "hvac cool setpoint is currently", data);
                                       
                                         var state = that.thermTarState;
-                                        if( that.thermTarState == Characteristic.TargetHeatingCoolingState.AUTO)
+                                        if( that.thermTarState == that.auto_state)
                                         {
                                             //Need to adjust the state here because HomeKit doesn't allow a current state of auto.
                                             if( that.thermCurrentTemp != -100 && that.thermCoolSet != -100 && that.thermHeatSet != -100 )
@@ -990,18 +994,18 @@ function HttpAccessory(log, config)
                                                     heatDiff = heatDiff*-1;
                                       
                                                 if( coolDiff < heatDiff )
-                                                    state = Characteristic.TargetHeatingCoolingState.COOL;
+                                                    state = that.cool_state;
                                                 else
-                                                    state = Characteristic.TargetHeatingCoolingState.HEAT;
+                                                    state = that.heat_state;
                                             }
                                             else
                                             {
-                                                state = Characteristic.TargetHeatingCoolingState.OFF;
+                                                state = that.off_state;
                                             }
                                         }
 
                                         that.enableSetTemp = false;
-                                        if( state == Characteristic.TargetHeatingCoolingState.COOL )
+                                        if( state == that.cool_state )
                                         {
                                           if( that.thermCoolSet >= 10 && that.thermCoolSet <= 38 )
                                             that.thermostatService.getCharacteristic(Characteristic.TargetTemperature).setValue(that.thermCoolSet);
@@ -1043,8 +1047,8 @@ function HttpAccessory(log, config)
                                         else
                                           that.log(that.service,"Received temperature that is outside of range.  Cannot set current temperature: ",that.thermCurrentTemp);
 
-                                        var state = Characteristic.TargetHeatingCoolingState.OFF;
-                                        if( that.thermTarState == Characteristic.TargetHeatingCoolingState.AUTO)
+                                        var state = that.off_state;
+                                        if( that.thermTarState == that.auto_state)
                                         {
                                             //Need to adjust the state here because HomeKit doesn't allow a current state of auto.
                                             if( that.thermCurrentTemp != -100 && that.thermCoolSet != -100 && that.thermHeatSet != -100 )
@@ -1058,13 +1062,13 @@ function HttpAccessory(log, config)
                                                     heatDiff = heatDiff*-1;
                                    
                                                 if( coolDiff < heatDiff )
-                                                    state = Characteristic.TargetHeatingCoolingState.COOL;
+                                                    state = that.cool_state;
                                                 else
-                                                    state = Characteristic.TargetHeatingCoolingState.HEAT;
+                                                    state = that.heat_state;
                                             }
                                             else
                                             {
-                                                state = Characteristic.TargetHeatingCoolingState.OFF;
+                                                state = that.off_state;
                                             }
                                         }
                                       });
@@ -1374,6 +1378,7 @@ HttpAccessory.prototype =
                    var that = this;
                    if( !this.enableSetState )
                    {
+                	   this.log("Set state disabled");
                        callback();
                        return;
                    }
@@ -1386,19 +1391,19 @@ HttpAccessory.prototype =
                    }
                    
                    var mode = this.off_string;
-                   if( state == Characteristic.TargetHeatingCoolingState.OFF )
+                   if( state == this.off_state )
                    {
                        mode = this.off_string;
                    }
-                   else if( state == Characteristic.TargetHeatingCoolingState.HEAT )
+                   else if( state == this.heat_state )
                    {
                        mode = this.heat_string;
                    }
-                   else if( state == Characteristic.TargetHeatingCoolingState.COOL )
+                   else if( state == this.cool_state )
                    {
                        mode = this.cool_string;
                    }
-                   else if( state == Characteristic.TargetHeatingCoolingState.AUTO )
+                   else if( state == this.auto_state )
                    {
                        mode = this.auto_string;
                    }
@@ -1421,7 +1426,7 @@ HttpAccessory.prototype =
                                         {
                                             this.log('HTTP HVAC mode function succeeded!');
 
-                                            if( that.thermTarState == Characteristic.TargetHeatingCoolingState.AUTO)
+                                            if( that.thermTarState == this.auto_state)
                                             {
                                              //Need to adjust the state here because HomeKit doesn't allow a current state of auto.
                                              if( that.thermCurrentTemp != -100 && that.thermCoolSet != -100 && that.thermHeatSet != -100 )
@@ -1435,25 +1440,25 @@ HttpAccessory.prototype =
                                                  heatDiff = heatDiff*-1;
 
                                                if( coolDiff < heatDiff )
-                                                 state = Characteristic.TargetHeatingCoolingState.COOL;
+                                                 state = this.cool_state;
                                                else
-                                                 state = Characteristic.TargetHeatingCoolingState.HEAT;
+                                                 state = this.heat_state;
                                             }
                                             else
                                             {
-                                              state = Characteristic.TargetHeatingCoolingState.OFF;
+                                              state = this.off_state;
                                             }
                                            }
 
                                            that.enableSetTemp = false;
-                                           if( state == Characteristic.TargetHeatingCoolingState.COOL && that.thermCoolSet != -100 )
+                                           if( state == this.cool_state && that.thermCoolSet != -100 )
                                            {
                                              if( that.thermCoolSet >= 10 && that.thermCoolSet <= 38 )
                                                that.thermostatService.getCharacteristic(Characteristic.TargetTemperature).setValue(that.thermCoolSet);
                                              else
                                                that.log(that.service,"Current cool setpoint is outside of range.  Cannot set target temperature: ",that.thermCoolSet);
                                            }
-                                           if( state == Characteristic.TargetHeatingCoolingState.HEAT && that.thermHeatSet != -100 )
+                                           if( state == this.heat_state && that.thermHeatSet != -100 )
                                            {
                                              if( that.thermHeatSet >= 10 && that.thermHeatSet <= 38 )
                                                that.thermostatService.getCharacteristic(Characteristic.TargetTemperature).setValue(that.thermHeatSet);
@@ -1487,8 +1492,8 @@ HttpAccessory.prototype =
                    }
         
                    var mode = this.thermTarState;
-                   if( mode == Characteristic.TargetHeatingCoolingState.OFF ||
-                       mode == Characteristic.TargetHeatingCoolingState.AUTO )
+                   if( mode == this.off_state ||
+                       mode == this.auto_state )
                    {
                        if( this.thermCurrentTemp != -100 && this.thermCoolSet != -100 && this.thermHeatSet != -100 )
                        {
@@ -1501,19 +1506,19 @@ HttpAccessory.prototype =
                                heatDiff = heatDiff*-1;
                            
                            if( coolDiff < heatDiff )
-                               mode = Characteristic.TargetHeatingCoolingState.COOL;
+                               mode = this.cool_state;
                            else
-                               mode = Characteristic.TargetHeatingCoolingState.HEAT;
+                               mode = this.heat_state;
                        }
                        else
                        {
-                           mode = Characteristic.TargetHeatingCoolingState.COOL;
+                           mode = this.cool_state;
                        }
                    }
         
                    var url = this.set_target_heat_url.replace("%c",temp);
                    var modeString = "heat setpoint";
-                   if( mode == Characteristic.TargetHeatingCoolingState.COOL )
+                   if( mode == this.cool_state )
                    {
                        url = this.set_target_cool_url.replace("%c",temp);
                        modeString = "cool setpoint";
@@ -1793,12 +1798,12 @@ HttpAccessory.prototype =
                             .on('get', function(callback)
                                        {
                                          that.log("Thermostat get target temp "+that.thermCurState);
-                                         if( that.thermTarState == Characteristic.TargetHeatingCoolingState.OFF ||
-                                             that.thermTarState == Characteristic.TargetHeatingCoolingState.AUTO )
+                                         if( that.thermTarState == that.off_state ||
+                                             that.thermTarState == that.auto_state )
                                          {
                                                 that.log("Temp from off mode");
                                                 //Need to adjust the state here because HomeKit doesn't allow a current state of auto.
-                                                var state = Characteristic.TargetHeatingCoolingState.OFF;
+                                                var state = that.off_state;
                                                 if( that.thermCurrentTemp != -100 && that.thermCoolSet != -100 && that.thermHeatSet != -100 )
                                                 {
                                                     var coolDiff = that.thermCurrentTemp - that.thermCoolSet;
@@ -1810,12 +1815,12 @@ HttpAccessory.prototype =
                                                         heatDiff = heatDiff*-1;
                                 
                                                     if( coolDiff < heatDiff )
-                                                        state = Characteristic.TargetHeatingCoolingState.COOL;
+                                                        state = that.cool_state;
                                                     else
-                                                        state = Characteristic.TargetHeatingCoolingState.HEAT;
+                                                        state = that.heat_state;
                                                 }
                                 
-                                                if( state == Characteristic.TargetHeatingCoolingState.COOL )
+                                                if( state == that.cool_state )
                                                 {
                                                     that.log("Sending "+that.thermCoolSet);
                                                     callback(null,that.thermCoolSet);
@@ -1827,10 +1832,10 @@ HttpAccessory.prototype =
                                                 }
                                          }
                                 
-                                         else if( that.thermTarState == Characteristic.TargetHeatingCoolingState.COOL )
+                                         else if( that.thermTarState == that.cool_state )
                                            { that.log("Sending "+that.thermCoolSet); callback(null,that.thermCoolSet)}
                               
-                                         else if( that.thermTarState == Characteristic.TargetHeatingCoolingState.HEAT )
+                                         else if( that.thermTarState == that.heat_state )
                                            { that.log("Sending "+that.thermHeatSet); callback(null,that.thermHeatSet)}
  
                                          else { that.log("What?"); }
