@@ -71,13 +71,13 @@ function HttpAccessory(log, config)
     var that = this;
     
     const requestHandler = (request, response) => {
-        //console.log(request.url)
+        console.log(request.url)
         
         var parts = request.url.split("/")
         var prop = parts[1]
         var value = parts[2]
         
-        //console.log("Received update to property("+prop+") with value("+value+")")
+        console.log("Received update to property("+prop+") with value("+value+")")
         
         if( prop == 1000 )
         {
@@ -99,6 +99,12 @@ function HttpAccessory(log, config)
                     if (that.lightbulbService) {
                         that.lightbulbService.getCharacteristic(Characteristic.On)
                         .setValue(that.state||that.currentlevel>0);
+                    }
+                    break;
+                case "Speaker":
+                    if (that.speakerService) {
+                        that.speakerService.getCharacteristic(Characteristic.Mute)
+                        .setValue(!that.state);
                     }
                     break;
                 case "Door":
@@ -185,6 +191,7 @@ function HttpAccessory(log, config)
                                      else
                                      {
                                      var binaryState = parseInt(body.replace(/\D/g,""));
+                                     that.log('Received security system state: ',binaryState);
                                      that.state = binaryState > 0;
                                      if( that.securityService && binaryState < 10 )
                                      {
@@ -224,6 +231,13 @@ function HttpAccessory(log, config)
                         .setValue(that.state);
                     }
                     break;
+                case "Speaker":
+                    if( that.speakerService) {
+                        that.log(that.service, "received volume",that.brightnesslvl_url, "volume is currently", that.currentlevel);
+                        that.speakerService.getCharacteristic(Characteristic.Volume).setValue(that.currentlevel);
+                        that.speakerService.getCharacteristic(Characteristic.Mute).setValue(!that.state);
+                    }
+                    break;
                 case "Fan":
                     if( that.fanService ) {
                         that.log(that.service, "received fan level",that.brightnesslvl_url, "level is currently", that.currentlevel);
@@ -238,6 +252,7 @@ function HttpAccessory(log, config)
                                      return;
                                      } else {
                                      var binaryState = parseInt(body.replace(/\D/g,""));
+                                     that.log('Received security system status: ',binaryState);
                                      that.state = binaryState > 0;
                                      if( that.securityService && binaryState < 10 ) {
                                      if( binaryState < 5 ) {
@@ -465,6 +480,7 @@ function HttpAccessory(log, config)
                                      return;
                                      } else {
                                      var binaryState = parseInt(body.replace(/\D/g,""));
+                                     that.log('Received security system state: ',binaryState);
                                      that.state = binaryState > 0;
                                      if( that.securityService && binaryState < 10 ) {
                                      if( binaryState < 5 ) {
@@ -547,7 +563,7 @@ function HttpAccessory(log, config)
     
     if( this.enable_status == "yes" )
     {
-        if( this.service == "Light" || this.service == "Dimmer" || this.service == "Switch" || this.service == "Fan" )
+        if( this.service == "Light" || this.service == "Dimmer" || this.service == "Switch" || this.service == "Speaker" || this.service == "Fan" )
             this.status_url = this.base_url + "/light_state";
         else if( this.service == "Door" || this.service == "Garage Door" || this.service == "Window" ||
                 this.service == "Contact" || this.service == "Motion" || this.service == "Lock" || this.service == "Doorbell" )
@@ -660,6 +676,11 @@ function HttpAccessory(log, config)
                                    if (that.lightbulbService)
                                    {
                                      that.lightbulbService.getCharacteristic(Characteristic.On).setValue(that.state||that.currentlevel>0);
+                                   }
+                                   break;
+                                 case "Speaker":
+                                   if( that.speakerService) {
+                                     that.speakerService.getCharacteristic(Characteristic.Mute).setValue(!that.state);
                                    }
                                    break;
                                  case "Door":
@@ -1113,6 +1134,13 @@ function HttpAccessory(log, config)
                                 that.lightbulbService.getCharacteristic(Characteristic.On).setValue(that.state);
                               }
                               break;
+                            case "Speaker":
+                              if( that.speakerService) {
+                                that.log(that.service, "received volume",that.brightnesslvl_url, "volume is currently", that.currentlevel);
+                                that.speakerService.getCharacteristic(Characteristic.Volume).setValue(that.currentlevel);
+                                that.speakerService.getCharacteristic(Characteristic.Mute).setValue(that.currentlevel==0);
+                              } 
+                              break;
                             case "Fan":
                               if( that.fanService )
                               {
@@ -1203,6 +1231,17 @@ HttpAccessory.prototype =
   setPowerState: function(powerOn, callback)
                {
                  var that = this;
+                 if( this.service == "Speaker" ) {
+                   if( this.enable_level && this.brightness_url )
+                   {
+                     if( powerOn && this.currentlevel > 0 ) {
+                       this.lastlevel = this.currentlevel;
+                       this.log("Last level stored as",this.lastlevel);
+                     }
+                     this.setBrightness(powerOn?0:this.lastlevel,callback);
+                   }
+                   return;
+                 }
                  if( this.enable_level && this.brightness_url && ((this.currentlevel == 0 && powerOn) || (this.currentlevel > 0 && !powerOn))  )
                  {
                    this.setBrightness(powerOn?100:0,callback);
@@ -1353,6 +1392,10 @@ HttpAccessory.prototype =
                                             that.lightbulbService.getCharacteristic(Characteristic.On).setValue(that.currentlevel>0);
                                             that.lightbulbService.getCharacteristic(Characteristic.Brightness).setValue(that.currentlevel);
                                           }
+                                          if( that.speakerService ) {
+                                            that.speakerService.getCharacteristic(Characteristic.Mute).setValue(that.currentlevel==0);
+                                            that.speakerService.getCharacteristic(Characteristic.Volume).setValue(that.currentlevel);
+                                          }
                                           if( that.fanService ) {
                                             that.fanService.getCharacteristic(Characteristic.On).setValue(that.currentlevel>0);
                                             that.fanService.getCharacteristic(Characteristic.RotationSpeed).setValue(that.currentlevel*25);
@@ -1403,7 +1446,7 @@ HttpAccessory.prototype =
                        mode = this.auto_string;
                    }
  
-                   this.thermTarState = mode;
+                   this.thermTarState = state;
                   
                    var url = this.set_mode_url.replace("%m", mode);
                    
@@ -1438,11 +1481,11 @@ HttpAccessory.prototype =
                                                  state = Characteristic.TargetHeatingCoolingState.COOL;
                                                else
                                                  state = Characteristic.TargetHeatingCoolingState.HEAT;
-                                            }
-                                            else
-                                            {
-                                              state = Characteristic.TargetHeatingCoolingState.OFF;
-                                            }
+                                              }
+                                              else
+                                              {
+                                                state = Characteristic.TargetHeatingCoolingState.OFF;
+                                              }
                                            }
 
                                            that.enableSetTemp = false;
@@ -1689,6 +1732,27 @@ HttpAccessory.prototype =
                           return [informationService, this.lockService];
                           break;
                       }
+
+                      case "Speaker":
+                      {
+                          this.speakerService = new Service.Speaker(this.name);
+                          this.speakerService
+                            .getCharacteristic(Characteristic.Mute)
+                            .on('get', function(callback) {
+                              callback(null,that.state)
+                            })
+                            .on('set', this.setPowerState.bind(this));
+
+                          this.speakerService
+                            .getCharacteristic(Characteristic.Volume)
+                            .on('get', function(callback) {
+                              callback(null,that.currentLevel)
+                            })
+                            .on('set', this.setBrightness.bind(this));
+
+                          return [informationService, this.speakerService];
+                          break;
+                      }
                           
                       case "Contact":
                       {
@@ -1833,7 +1897,7 @@ HttpAccessory.prototype =
                                          else if( that.thermTarState == Characteristic.TargetHeatingCoolingState.HEAT )
                                            { that.log("Sending "+that.thermHeatSet); callback(null,that.thermHeatSet)}
  
-                                         else { that.log("What?"); }
+                                         else { that.log("Sending "+that.thermCurrentTemp); callback(null,that.thermCurrentTemp) }
                                        })
                             .on('set', this.setThermostatTargetTemp.bind(this));
                           
