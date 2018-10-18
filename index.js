@@ -601,7 +601,13 @@ function HttpAccessory(log, config)
       this.manufacturer           = config["manufacturer"]            || "Unknown";
       this.model                  = config["model"]                   || "Unknown";
       this.serial                 = config["serial"]                  || "Unknown";
-      this.refresh_interval       = config["refresh_interval"]        || 300;
+
+      this.refresh_interval       = config["refresh_interval"]        || 900000;
+      this.refresh_interval = this.refresh_interval + (Math.floor(Math.random()*300000) - 300000); // Random value between 10 and 20 minutes. 
+      if( this.refresh_interval <= 0 )
+        this.refresh_interval = 900000 + (Math.floor(Math.random()*300000) - 300000);
+      this.log(this.service, "set refresh interval to",this.refresh_interval);
+
       this.brightnessHandling     = config["brightnessHandling"] 	 	|| "no";
       this.switchHandling 	    = config["switchHandling"] 		 	|| "no";
     }
