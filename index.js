@@ -1220,7 +1220,7 @@ HttpAccessory.prototype =
                                   },
                             function(error, response, body)
                             {
-                              if( errorCount < 2 && error )
+                              if( errorCount < 5 && error )
                               {
                                 this.log(this.service, "Failed calling service endpoint.  Retrying in 1 second.");
                                 setTimeout(function() { this.doRequest(url,body,method,username,password,sendimmediately,callback,errorCount+1); }.bind(this),1000);
