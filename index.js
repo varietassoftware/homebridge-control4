@@ -651,8 +651,7 @@ function HttpAccessory(log, config)
                                                                   {
                                                                     if (error)
                                                                     {
-                                                                      that.log('HTTP get power function failed: %s', error.message);
-                                                                      return;
+                                                                      done(error, null);
                                                                     }
                                                                     else
                                                                     {
@@ -660,10 +659,17 @@ function HttpAccessory(log, config)
                                                                     }
                                                                   })
                                                }, {longpolling:true,interval:this.refresh_interval,longpollEventName:"statuspoll"});
-            
+                   
+                    statusemitter.on("error", function(err, data) {
+                      that.log('HTTP get power function failed: %s', err.message);
+                    });
+
 		    statusemitter.on("statuspoll",
                              function(data)
                              {
+                               if( data == null || data.length == 0 )
+                                 return;
+
                                var binaryState = parseInt(data.replace(/\D/g,""));
                                that.state = binaryState > 0;
                                that.log(that.service, "received power",that.status_url, "state is currently", binaryState);
@@ -791,8 +797,7 @@ function HttpAccessory(log, config)
                                                                     {
                                                                       if (error)
                                                                       {
-                                                                        that.log('HTTP get hvac status function failed: %s', error.message);
-                                                                        return;
+                                                                        done(error,null);
                                                                       }
                                                                       else
                                                                       {
@@ -801,9 +806,16 @@ function HttpAccessory(log, config)
                                                                     })
                                                  }, {longpolling:true,interval:this.refresh_interval,longpollEventName:"hvacstatuspoll"});
 
+            hvacstatusemitter.on("error", function(err,data) {
+              that.log('HTTP get hvac status function failed: %s', err.message);
+            });
+
             hvacstatusemitter.on("hvacstatuspoll",
                                function(data)
                                {
+                                 if( data == null || data.length == 0 )
+                                   return;
+
                                  var state = Characteristic.TargetHeatingCoolingState.OFF;
                                  if( data.includes(that.cool_string) )
                                  {
@@ -837,19 +849,25 @@ function HttpAccessory(log, config)
                                                                     {
                                                                       if (error)
                                                                       {
-                                                                        that.log('HTTP get hvac state function failed: %s', error.message);
-                                                                        return;
+                                                                        done(error,null);
                                                                       }
                                                                       else
                                                                       {
                                                                         done(null, body);
                                                                       }
                                                                     })
-                                                 }, {longpolling:true,interval:this.refresh_interval,longpollEventName:"hvacstatepoll"});
+                                                 }, {longpolling:true,interval:this.refresh_interval+2000,longpollEventName:"hvacstatepoll"});
             
+            hvacmodeemitter.on("error", function(err,data) {
+              that.log('HTTP get hvac state function failed: %s', err.message);
+            });
+
             hvacmodeemitter.on("hvacstatepoll",
                                function(data)
                                {
+                                 if( data == null || data.length == 0 )
+                                   return;
+
                                  var state = Characteristic.TargetHeatingCoolingState.OFF;
                                  if( data == that.cool_string )
                                  {
@@ -923,19 +941,25 @@ function HttpAccessory(log, config)
                                                                       {
                                                                         if (error)
                                                                         {
-                                                                          that.log('HTTP get hvac heat setpoint function failed: %s', error.message);
-                                                                          return;
+                                                                          done(error, null);
                                                                         }
                                                                         else
                                                                         {
                                                                           done(null, body);
                                                                         }
                                                                       })
-                                                     }, {longpolling:true,interval:this.refresh_interval,longpollEventName:"hvacheatpoll"});
+                                                     }, {longpolling:true,interval:this.refresh_interval+4000,longpollEventName:"hvacheatpoll"});
                 
+                hvacheatsetemitter.on("error", function(err, data) {
+                  that.log('HTTP get hvac heat setpoint function failed: %s', err.message); 
+                });
+
                 hvacheatsetemitter.on("hvacheatpoll",
                                    function(data)
                                    {
+                                     if( data == null || data.length == 0 )
+                                       return;
+
                                      that.thermHeatSet = parseFloat(data);
                                      that.log(that.service, "received hvac heat setpoint",that.get_target_heat_url, "hvac heat setpoint is currently", data);
 
@@ -986,19 +1010,25 @@ function HttpAccessory(log, config)
                                                                          {
                                                                            if (error)
                                                                            {
-                                                                             that.log('HTTP get hvac cool setpoint function failed: %s', error.message);
-                                                                             return;
+                                                                             done(error, null);
                                                                            }
                                                                            else
                                                                            {
                                                                              done(null, body);
                                                                            }
                                                                          })
-                                                        }, {longpolling:true,interval:this.refresh_interval,longpollEventName:"hvaccoolpoll"});
+                                                        }, {longpolling:true,interval:this.refresh_interval+6000,longpollEventName:"hvaccoolpoll"});
                 
+                hvaccoolsetemitter.on("error", function(err, data) {
+                  that.log('HTTP get hvac cool setpoint function failed: %s', err.message); 
+                });
+
                 hvaccoolsetemitter.on("hvaccoolpoll",
                                       function(data)
                                       {
+                                        if( data == null || data.length == 0 )
+                                          return;
+
                                         that.thermCoolSet = parseFloat(data);
                                         that.log(that.service, "received hvac cool setpoint",that.get_target_cool_url, "hvac cool setpoint is currently", data);
                                       
@@ -1049,19 +1079,25 @@ function HttpAccessory(log, config)
                                                                          {
                                                                            if (error)
                                                                            {
-                                                                             that.log('HTTP get current temperature function failed: %s', error.message);
-                                                                             return;
+                                                                             done(error,null);
                                                                            }
                                                                            else
                                                                            {
                                                                              done(null, body);
                                                                            }
                                                                          })
-                                                        }, {longpolling:true,interval:this.refresh_interval,longpollEventName:"hvactemppoll"});
+                                                        }, {longpolling:true,interval:this.refresh_interval+8000,longpollEventName:"hvactemppoll"});
                 
+                hvactempemitter.on("error", function(err, data) {
+                  that.log('HTTP get current temperature function failed: %s', err.message);
+                });
+
                 hvactempemitter.on("hvactemppoll",
                                       function(data)
                                       {
+                                        if( data == null || data.length == 0 )
+                                          return;
+
                                         that.thermCurrentTemp = parseFloat(data);
                                         that.log(that.service, "received current temperature",that.get_temperature_url, "temperature is currently", data);
  
@@ -1111,8 +1147,7 @@ function HttpAccessory(log, config)
                                                              {
                                                                if (error)
                                                                {
-                                                                 that.log('HTTP get power function failed: %s', error.message);
-                                                                 return;
+                                                                 done(error, null);
                                                                }
                                                                else
                                                                {
@@ -1121,9 +1156,16 @@ function HttpAccessory(log, config)
                                                              }) // set longer polling as slider takes longer to set value
                                           }, {longpolling:true,interval:this.refresh_interval,longpollEventName:"levelpoll"});
         
+        levelemitter.on("error", function(err, data) {
+          that.log('HTTP get power function failed: %s', err.message);
+        });
+
         levelemitter.on("levelpoll",
                         function(data)
                         {
+                          if( data == null || data.length == 0 )
+                            return;
+
                           that.currentlevel = parseInt(data);
                           that.state = that.currentlevel > 0;
 
@@ -1163,18 +1205,10 @@ function HttpAccessory(log, config)
 
 HttpAccessory.prototype =
 {
-  httpRequest: function(url, body, method, username, password, sendimmediately, callback)
+  doRequest: function(url, body, method, username, password, sendimmediately, callback, errorCount)
                {
-                 request('http://localhost/sig/sig.php',
-                         function(error, response, body)
-                         {
-                           var sig = body;
-                           var signed = url;
-                           if( sig !== undefined && sig !== null && sig != "null" && sig.length > 0 && sig.length < 50 && !error )
-                             signed = signed + "?" + sig;
-            
-                           request({
-                               url: signed,
+                            request({
+                               url: url,
                               body: body,
                             method: method,
                 rejectUnauthorized: false,
@@ -1186,11 +1220,62 @@ HttpAccessory.prototype =
                                   },
                             function(error, response, body)
                             {
-                              callback(error, response, body)
-                            })
-                        });
+                              if( errorCount < 2 && error )
+                              {
+                                this.log(this.service, "Failed calling service endpoint.  Retrying in 1 second.");
+                                setTimeout(function() { this.doRequest(url,body,method,username,password,sendimmediately,callback,errorCount+1); }.bind(this),1000);
+                              }
+                              else
+                              {
+                                callback(error, response, body)
+                              }
+                            }.bind(this));
+               },
+
+  httpRequest: function(url, body, method, username, password, sendimmediately, callback)
+               {
+                 request('http://localhost/sig/sig.php',
+                         function(error, response, body)
+                         {
+                           var sig = body;
+                           var signed = url;
+                           if( sig !== undefined && sig !== null && sig != "null" && sig.length > 0 && sig.length < 50 && !error )
+                             signed = signed + "?" + sig;
+            
+                           this.doRequest(signed,body,method,username,password,sendimmediately,callback,0);
+                         }.bind(this));
                 },
     
+  doSetSecurityState: function(callback, errorCount)
+               {
+                   var that = this;
+                   var url;
+                   var body;
+
+                   url = that.state_url.replace("%s", that.secTarState);
+                   that.log("Setting new security state: "+url);
+
+                   that.httpRequest(url, body, that.http_method, that.username, that.password, that.sendimmediately,
+                                    function(error, response, responseBody)
+                                    {
+                                      if (errorCount > 2 && error)
+                                      {
+                                        that.log('HTTP set security state function failed after 3 attempts: %s', error.message);
+                                        callback(error);
+                                      }
+                                      else if(error)
+                                      {
+                                        that.log('HTTP set security state function failed.  Retrying after 1 second: %s', error.message);
+                                        setTimeout(function() { that.doSetSecurityState(callback,errorCount+1); }.bind(that),1000);
+                                      }
+                                      else
+                                      {
+                                        that.log('HTTP set security state function succeeded!');
+                                        callback();
+                                      }
+                                    }.bind(that));
+               },
+
   setSecurityState: function(newState, callback)
                {
                  var that = this;
@@ -1205,28 +1290,7 @@ HttpAccessory.prototype =
         
                    this.secTarState = newState;
 
-                   setTimeout(function() {  
-                   var url;
-                   var body;
-
-                   url = that.state_url.replace("%s", that.secTarState);
-                   that.log("Setting new security state: "+url);
-      
-                   that.httpRequest(url, body, that.http_method, that.username, that.password, that.sendimmediately,
-                                    function(error, response, responseBody)
-                                    {
-                                      if (error)
-                                      {
-                                        that.log('HTTP set security state function failed: %s', error.message);
-                                        callback(error);
-                                      }
-                                      else
-                                      {
-                                        that.log('HTTP set security state function succeeded!');
-                                        callback();
-                                      }
-                                    }.bind(that));
-                   },1000);
+                   setTimeout(function() { this.doSetSecurityState(callback,0); }.bind(this),1000);
                  }
                  else
                  {
@@ -1234,6 +1298,79 @@ HttpAccessory.prototype =
                  }
                },
     
+  doSetPowerState: function(url,body,callback,errorCount)
+               {
+                 this.httpRequest(url, body, this.http_method, this.username, this.password, this.sendimmediately,
+                                    function(error, response, responseBody)
+                                    {
+                                      if (errorCount > 2 && error )
+                                      {
+                                        this.log('HTTP set power function failed after 3 attempts: %s', error.message);
+                                        callback(error);
+                                      }
+                                      else if (error)
+                                      {
+                                        this.log('HTTP set power function failed. Retrying after 1 second: %s', error.message);
+                                        setTimeout(function() { this.doSetPowerState(url,body,callback,errorCount+1); }.bind(this),1000);
+                                      }
+                                      else
+                                      {
+                                        this.log('HTTP set power function succeeded!');
+                                        callback();
+
+                                        if(this.garageService)
+                                        { 
+                                          this.doRunGarageCheck();
+                                        }
+                                      }
+                                    }.bind(this));
+               },
+
+  doRunGarageCheck: function()
+               {
+                 if( this.garageCheck != -1 )
+                 {
+                   clearInterval(this.garageCheck);
+                   this.garageCheck = -1;
+                 }
+                 this.garageCheckCount = 0;
+
+                 this.garageCheck = setInterval(function()
+                 {
+                   this.garageCheckCount++;
+                   if( this.garageCheckCount > 30 )
+                   {
+                     if( this.garageCheck != -1 )
+                     {
+                       clearInterval(this.garageCheck);
+                       this.garageCheck = -1;
+                     }
+                     return;
+                   }
+
+                   this.httpRequest(this.status_url, "", "GET", this.username, this.password, this.sendimmediately,
+                                    function(error, response, body)
+                                    {
+                                      if (error)
+                                      {
+                                        this.log('HTTP get power function failed: %s', error.message);
+                                        return;
+                                      }
+                                      else
+                                      {
+                                        var binaryState = parseInt(body.replace(/\D/g,""));
+                                        this.state = binaryState > 0;
+                                        this.log(this.service, "received power",this.status_url, "state is currently", binaryState);
+
+                                        this.enableSet = false;
+                                        this.garageService.getCharacteristic(Characteristic.CurrentDoorState)
+                                                          .setValue(this.state?Characteristic.CurrentDoorState.CLOSED:Characteristic.CurrentDoorState.OPEN);
+                                        this.enableSet = true;
+                                      }
+                                    }.bind(this))
+                 }.bind(this),2000);
+               },
+
   setPowerState: function(powerOn, callback)
                {
                  var that = this;
@@ -1288,65 +1425,7 @@ HttpAccessory.prototype =
                      this.log("Setting power state to off");
                    } 
 
-                   this.httpRequest(url, body, this.http_method, this.username, this.password, this.sendimmediately,
-                                    function(error, response, responseBody)
-                                    {
-                                      if (error)
-                                      {
-                                        this.log('HTTP set power function failed: %s', error.message);
-                                        callback(error);
-                                      }
-                                      else
-                                      {
-                                        this.log('HTTP set power function succeeded!');
-                                        callback();
-
-                                        if(this.garageService)
-                                        {
-                                          if( this.garageCheck != -1 )
-                                          {
-                                            clearInterval(this.garageCheck);
-                                            this.garageCheck = -1;
-                                          }
-                                          this.garageCheckCount = 0;
-
-                                          this.garageCheck = setInterval(function()
-                                          {
-                                            this.garageCheckCount++;
-                                            if( this.garageCheckCount > 30 )
-                                            {
-                                              if( this.garageCheck != -1 )
-                                              {
-                                                clearInterval(this.garageCheck);
-                                                this.garageCheck = -1;
-                                              }
-                                              return;
-                                            }
-
-                                            this.httpRequest(this.status_url, "", "GET", this.username, this.password, this.sendimmediately,
-                                                             function(error, response, body)
-                                                             {
-                                                               if (error)
-                                                               {
-                                                                 this.log('HTTP get power function failed: %s', error.message);
-                                                                 return;
-                                                               }
-                                                               else
-                                                               {
-                                                                 var binaryState = parseInt(body.replace(/\D/g,""));
-                                                                 this.state = binaryState > 0;
-                                                                 this.log(this.service, "received power",this.status_url, "state is currently", binaryState);
-
-                                                                 this.enableSet = false;
-                                                                 this.garageService.getCharacteristic(Characteristic.CurrentDoorState)
-                                                                         .setValue(this.state?Characteristic.CurrentDoorState.CLOSED:Characteristic.CurrentDoorState.OPEN);
-                                                                 this.enableSet = true;
-                                                               }
-                                                             }.bind(this))
-                                          }.bind(this),1000);
-                                        }
-                                      }
-                                    }.bind(this));
+                   this.doSetPowerState(url,body,callback,0);
                 }
                 else
                 {
@@ -1354,6 +1433,48 @@ HttpAccessory.prototype =
                 }
               },
     
+  doSetBrightness: function(callback, errorCount)
+              {
+                     var that = this;
+                     var url = that.brightness_url.replace("%b", that.currentlevel)
+
+                     that.log("Setting brightness to %s", that.currentlevel);
+
+                     that.httpRequest(url, "", that.http_brightness_method, that.username, that.password, that.sendimmediately,
+                                      function(error, response, body)
+                                      {
+                                        if (errorCount > 2 && error)
+                                        {
+                                          that.log('HTTP brightness function failed after 3 attempts: %s', error);
+                                          callback(error);
+                                        }
+                                        else if( error )
+                                        {
+                                          that.log('HTTP brightness function failed. Retrying in 1 second: %s', error);
+                                          setTimeout(function() { that.doSetBrightness(callback,errorCount+1); }.bind(that),1000);
+                                        }
+                                        else
+                                        {
+                                          that.log('HTTP brightness function succeeded!');
+                                          that.enableSet = false;
+                                          if( that.lightbulbService ) {
+                                            that.lightbulbService.getCharacteristic(Characteristic.On).setValue(that.currentlevel>0);
+                                            that.lightbulbService.getCharacteristic(Characteristic.Brightness).setValue(that.currentlevel);
+                                          }
+                                          if( that.speakerService ) {
+                                            that.speakerService.getCharacteristic(Characteristic.Mute).setValue(that.currentlevel==0);
+                                            that.speakerService.getCharacteristic(Characteristic.Volume).setValue(that.currentlevel);
+                                          }
+                                          if( that.fanService ) {
+                                            that.fanService.getCharacteristic(Characteristic.On).setValue(that.currentlevel>0);
+                                            that.fanService.getCharacteristic(Characteristic.RotationSpeed).setValue(that.currentlevel*25);
+                                          }
+                                          that.enableSet = true;
+                                          callback();
+                                        }
+                                      }.bind(that));
+              },
+
   setBrightness: function(level, callback)
                {
                  var that = this;
@@ -1377,40 +1498,7 @@ HttpAccessory.prototype =
         
                    this.currentlevel = level;
 
-                   setTimeout(function() {
-                     var url = that.brightness_url.replace("%b", that.currentlevel)
-        
-                     that.log("Setting brightness to %s", level);
-        
-                     that.httpRequest(url, "", that.http_brightness_method, that.username, that.password, that.sendimmediately,
-                                      function(error, response, body)
-                                      {
-                                        if (error)
-                                        {
-                                          that.log('HTTP brightness function failed: %s', error);
-                                          callback(error);
-                                        }
-                                        else
-                                        {
-                                          that.log('HTTP brightness function succeeded!');
-                                          that.enableSet = false;
-                                          if( that.lightbulbService ) {
-                                            that.lightbulbService.getCharacteristic(Characteristic.On).setValue(that.currentlevel>0);
-                                            that.lightbulbService.getCharacteristic(Characteristic.Brightness).setValue(that.currentlevel);
-                                          }
-                                          if( that.speakerService ) {
-                                            that.speakerService.getCharacteristic(Characteristic.Mute).setValue(that.currentlevel==0);
-                                            that.speakerService.getCharacteristic(Characteristic.Volume).setValue(that.currentlevel);
-                                          }
-                                          if( that.fanService ) {
-                                            that.fanService.getCharacteristic(Characteristic.On).setValue(that.currentlevel>0);
-                                            that.fanService.getCharacteristic(Characteristic.RotationSpeed).setValue(that.currentlevel*25);
-                                          }
-                                          that.enableSet = true;
-                                          callback();
-                                        }
-                                      }.bind(that));
-                    },300);
+                   setTimeout(function() { that.doSetBrightness(callback,0); }.bind(that),300);
                  }
                  else
                  {
@@ -1418,53 +1506,20 @@ HttpAccessory.prototype =
                  }
                },
 
-  setThermostatTargetHeatingCoolingState: function(state, callback)
-               {
-                   var that = this;
-                   if( !this.enableSetState )
-                   {
-                       callback();
-                       return;
-                   }
-                   
-                   if( !this.set_mode_url )
-                   {
-                       this.log.warn("Ignoring request; No set mode url defined.");
-                       callback(new Error("No set mode url defined."));
-                       return;
-                   }
-                   
-                   var mode = this.off_string;
-                   if( state == Characteristic.TargetHeatingCoolingState.OFF )
-                   {
-                       mode = this.off_string;
-                   }
-                   else if( state == Characteristic.TargetHeatingCoolingState.HEAT )
-                   {
-                       mode = this.heat_string;
-                   }
-                   else if( state == Characteristic.TargetHeatingCoolingState.COOL )
-                   {
-                       mode = this.cool_string;
-                   }
-                   else if( state == Characteristic.TargetHeatingCoolingState.AUTO )
-                   {
-                       mode = this.auto_string;
-                   }
- 
-                   this.thermTarState = state;
-                  
-                   var url = this.set_mode_url.replace("%m", mode);
-                   
-                   this.log("Setting hvac mode to %s", mode);
-                   
+  doSetThermostatTargetHeatingCoolingState: function(url, callback, errorCount)
+              {
                    this.httpRequest(url, "", "GET", this.username, this.password, this.sendimmediately,
                                     function(error, response, body)
                                     {
-                                        if( error )
+                                        if( errorCount > 2 && error )
                                         {
-                                            this.log('HTTP HVAC mode function failed: %s', error);
+                                            this.log('HTTP HVAC mode function failed after 3 attempts: %s', error);
                                             callback(error);
+                                        }
+                                        else if( error )
+                                        {
+                                            this.log('HTTP HVAC mode function failed. Retrying in 1 second: %s', error);
+                                            setTimeout(function() { this.doSetThermostatTargetHeatingCoolingState(url,callback,errorCount+1); }.bind(this),1000);
                                         }
                                         else
                                         {
@@ -1514,6 +1569,71 @@ HttpAccessory.prototype =
                                             callback();
                                         }
                                     }.bind(this));
+              },
+
+  setThermostatTargetHeatingCoolingState: function(state, callback)
+               {
+                   var that = this;
+                   if( !this.enableSetState )
+                   {
+                       callback();
+                       return;
+                   }
+                   
+                   if( !this.set_mode_url )
+                   {
+                       this.log.warn("Ignoring request; No set mode url defined.");
+                       callback(new Error("No set mode url defined."));
+                       return;
+                   }
+                   
+                   var mode = this.off_string;
+                   if( state == Characteristic.TargetHeatingCoolingState.OFF )
+                   {
+                       mode = this.off_string;
+                   }
+                   else if( state == Characteristic.TargetHeatingCoolingState.HEAT )
+                   {
+                       mode = this.heat_string;
+                   }
+                   else if( state == Characteristic.TargetHeatingCoolingState.COOL )
+                   {
+                       mode = this.cool_string;
+                   }
+                   else if( state == Characteristic.TargetHeatingCoolingState.AUTO )
+                   {
+                       mode = this.auto_string;
+                   }
+ 
+                   this.thermTarState = state;
+                  
+                   var url = this.set_mode_url.replace("%m", mode);
+                   
+                   this.log("Setting hvac mode to %s", mode);
+                   this.doSetThermostatTargetHeatingCoolingState(url,callback,0);   
+               },
+
+  doSetThermostatTargetTemp: function(url, callback, errorCount)
+               {
+                   this.httpRequest(url, "", "GET", this.username, this.password, this.sendimmediately,
+                         function(error, response, body)
+                         {
+                            if( errorCount > 2 && error )
+                            {
+                                this.log('HTTP HVAC setpoint function failed after 3 retries: %s', error);
+                                callback(error);
+                            }
+                            else if( error )
+                            {
+                                this.log('HTTP HVAC setpoint function failed. Retrying in 1 second: %s', error);
+                                setTimeout(function() { this.doSetThermostatTargetTemp(url,callback,errorCount+1); }.bind(this),1000);
+                            }
+                            else
+                            {
+                                this.log('HTTP HVAC setpoint function succeeded!');
+                                callback();
+                            }
+                         }.bind(this));
                },
 
   setThermostatTargetTemp: function(temp, callback)
