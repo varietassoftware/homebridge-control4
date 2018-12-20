@@ -1511,6 +1511,7 @@ HttpAccessory.prototype =
                    this.httpRequest(url, "", "GET", this.username, this.password, this.sendimmediately,
                                     function(error, response, body)
                                     {
+                                        var that = this
                                         if( errorCount > 2 && error )
                                         {
                                             this.log('HTTP HVAC mode function failed after 3 attempts: %s', error);
