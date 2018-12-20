@@ -1506,7 +1506,7 @@ HttpAccessory.prototype =
                  }
                },
 
-  doSetThermostatTargetHeatingCoolingState: function(url, callback, errorCount)
+  doSetThermostatTargetHeatingCoolingState: function(url, state, callback, errorCount)
               {
                    this.httpRequest(url, "", "GET", this.username, this.password, this.sendimmediately,
                                     function(error, response, body)
@@ -1520,7 +1520,7 @@ HttpAccessory.prototype =
                                         else if( error )
                                         {
                                             this.log('HTTP HVAC mode function failed. Retrying in 1 second: %s', error);
-                                            setTimeout(function() { this.doSetThermostatTargetHeatingCoolingState(url,callback,errorCount+1); }.bind(this),1000);
+                                            setTimeout(function() { this.doSetThermostatTargetHeatingCoolingState(url,state,callback,errorCount+1); }.bind(this),1000);
                                         }
                                         else
                                         {
@@ -1611,7 +1611,7 @@ HttpAccessory.prototype =
                    var url = this.set_mode_url.replace("%m", mode);
                    
                    this.log("Setting hvac mode to %s", mode);
-                   this.doSetThermostatTargetHeatingCoolingState(url,callback,0);   
+                   this.doSetThermostatTargetHeatingCoolingState(url,state,callback,0);   
                },
 
   doSetThermostatTargetTemp: function(url, callback, errorCount)
