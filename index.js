@@ -23,7 +23,7 @@ function HttpAccessory(log, config)
     this.invert_contact         = config["invert_contact"] || "no";
     this.include_video          = config["include_video"] || "yes";
     
-    if( this.service == "Security" || this.service == "Motion" || this.service == "Doorbell" )
+    if( this.service == "Security" || this.service == "Motion" || this.service == "Doorbell" || this.service == "Blinds" )
         this.enable_power_control = "no";
     
     if( this.enable_power_control == "yes" )
@@ -50,7 +50,11 @@ function HttpAccessory(log, config)
             this.off_body               = config["off_body"];
         }
     }
-    
+   
+    if( this.service == "Blinds" )
+    {
+	this.level_url             = this.base_url + "/set_blinds_target/%t";
+    }
     if( this.service == "Thermostat" )
     {
         this.set_mode_url          = this.base_url + "/set_hvac_mode/%m";
@@ -78,7 +82,48 @@ function HttpAccessory(log, config)
         var value = parts[2]
         
         console.log("Received update to property("+prop+") with value("+value+")")
-        
+       
+        if( that.service == "Keypad" )
+        {
+            var binaryState = value;
+            console.log("Detected keypad "+prop+" button event ("+binaryState+").  Calling service update.");
+            switch (prop) {
+                case 1:
+                {
+                    that.keypadService1.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(binaryState);
+                    break;
+                }
+                case 2:
+                {
+                    that.keypadService2.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(binaryState);
+                    break;
+                }
+                case 3:
+                {
+                    that.keypadService3.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(binaryState);
+                    break;
+                }
+                case 4:
+                {
+                    that.keypadService4.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(binaryState);
+                    break;
+                }
+                case 5:
+                {
+                    that.keypadService5.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(binaryState);
+                    break;
+                } 
+                case 6: 
+                {
+                    that.keypadService6.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(binaryState);
+                    break;
+                }
+                default: 
+                    break;
+            }
+            return;
+        }
+ 
         if( prop == 1000 )
         {
             var binaryState = parseInt(value.replace(/\D/g,""));
@@ -190,7 +235,7 @@ function HttpAccessory(log, config)
                                      }
                                      else
                                      {
-                                     var binaryState = parseInt(body.replace(/\D/g,""));
+                                     var binaryState = parseInt(value.replace(/\D/g,""));
                                      that.log('Received security system state: ',binaryState);
                                      that.state = binaryState > 0;
                                      if( that.securityService && binaryState < 10 )
@@ -251,8 +296,8 @@ function HttpAccessory(log, config)
                                      that.log('HTTP get power function failed: %s', error.message);
                                      return;
                                      } else {
-                                     var binaryState = parseInt(body.replace(/\D/g,""));
-                                     that.log('Received security system status: ',binaryState);
+                                     var binaryState = parseInt(value.replace(/\D/g,""));
+			             that.log('Received security system status: ',binaryState);
                                      that.state = binaryState > 0;
                                      if( that.securityService && binaryState < 10 ) {
                                      if( binaryState < 5 ) {
@@ -273,6 +318,95 @@ function HttpAccessory(log, config)
             }
             that.enableSet = true;
         }
+	else if( prop == 1002 )
+	{
+	    switch (that.service) {
+	        case "Blinds":
+		    if( that.blindsService ) {
+			var isStopped = parseInt(value.replace(/\D/g,""));
+			that.log(that.service, "received update to stopped motion state: ",isStopped);
+			if( isStopped == 1 ) {
+			    that.blindState = Characteristic.PositionState.STOPPED;
+			    that.enableSet = false;
+			    that.blindsService.getCharacteristic(Characteristic.PositionState).setValue(that.blindState);
+			    that.enableSet = true;
+			}
+		    }
+		    break;
+	    }
+	}
+	else if( prop == 1004 )
+	{
+	    switch (that.service) {
+	        case "Blinds":
+		    if( that.blindsService ) {
+			that.blindPosition = parseInt(value.replace(/\D/g,""));
+			that.log(that.service, "received update to blind level: ",that.blindPosition);
+			that.enableSet = false;
+			that.blindsService.getCharacteristic(Characteristic.CurrentPosition).setValue(that.blindPosition);
+			that.enableSet = true;
+		    }
+		    break;
+	    }
+	}
+        else if( prop == 1005 )
+	{
+	    switch (that.service) {
+	        case "Blinds":
+		    if( that.blindsService ) {
+			that.blindTarget = parseInt(value.replace(/\D/g,""));
+			that.log(that.service, "received update to blind target level: ",that.blindTarget);
+			that.enableSet = false;
+			that.blindsService.getCharacteristic(Characteristic.TargetPosition).setValue(that.blindTarget);
+			that.enableSet = true;
+		    }
+		    break;
+	    }
+	}
+        else if( prop == 1008 )
+	{
+	    switch (that.service) {
+	        case "Blinds":
+		    if( that.blindsService ) {
+			var isOpening = parseInt(value.replace(/\D/g,""));
+			if( isOpening == 1 ) {
+			    that.blindState = Characteristic.PositionState.INCREASING;
+			    that.enableSet = false;
+			    //that.blindsService.getCharacteristic(Characteristic.PositionState).setValue(that.blindState);
+			    that.enableSet = true;
+			} else {
+			    that.blindState = Characteristic.PositionState.STOPPED;
+			    that.enableSet = false;
+			    //that.blindsService.getCharacteristic(Characteristic.PositionState).setValue(that.blindState);
+			    that.enableSet = true;
+			}
+			that.log(that.service, "received update to opening motion state: ",isOpening);
+		    }
+		    break;
+	    }
+	}
+        else if( prop == 1009 )
+	{
+	    switch (that.service) {
+	        case "Blinds":
+		    if( that.blindsService ) {
+			var isClosing = parseInt(value.replace(/\D/g,""));
+			if( isClosing == 1 ) {
+			    that.blindState = Characteristic.PositionState.DECREASING;
+			    that.enableSet = false;
+			    //that.blindsService.getCharacteristic(Characteristic.PositionState).setValue(that.blindState);
+			    that.enableSet = true;
+			} else {
+			    that.blindState = Characteristic.PositionState.STOPPED;
+			    that.enableSet = false;
+			    //that.blindsService.getCharacteristic(Characteristic.PositionState).setValue(that.blindState);
+			    that.enableSet = true;
+			}
+			that.log(that.service, "received update to closing motion state: ",isClosing);
+		    }
+		    break;
+	    }
+	}
         else if( prop == 1107 ) // HVAC Status
         {
             var state = Characteristic.TargetHeatingCoolingState.OFF;
@@ -479,7 +613,7 @@ function HttpAccessory(log, config)
                                      that.log('HTTP get power function failed: %s', error.message);
                                      return;
                                      } else {
-                                     var binaryState = parseInt(body.replace(/\D/g,""));
+                                     var binaryState = parseInt(value.replace(/\D/g,""));
                                      that.log('Received security system state: ',binaryState);
                                      that.state = binaryState > 0;
                                      if( that.securityService && binaryState < 10 ) {
@@ -616,6 +750,9 @@ function HttpAccessory(log, config)
     this.state = false;
     this.lastSent = false;
     this.lastState = false;
+    this.blindPosition = 0;
+    this.blindTarget = 0;
+    this.blindState = 2;
     if( this.invert_contact == "yes" )
         this.lastState = true;
     this.secTarState = 3;
@@ -1358,7 +1495,7 @@ HttpAccessory.prototype =
                                       }
                                       else
                                       {
-                                        var binaryState = parseInt(body.replace(/\D/g,""));
+                                        var binaryState = parseInt(value.replace(/\D/g,""));
                                         this.state = binaryState > 0;
                                         this.log(this.service, "received power",this.status_url, "state is currently", binaryState);
 
@@ -1474,6 +1611,53 @@ HttpAccessory.prototype =
                                         }
                                       }.bind(that));
               },
+  doSetBlindTarget: function(callback, errorCount)
+              {
+                     var that = this;
+                     var url = that.level_url.replace("%t", that.newBlindTarget)
+
+                     that.log("Setting blind level to %s", that.newBlindTarget);
+
+                     that.httpRequest(url, "", "GET", that.username, that.password, that.sendimmediately,
+                                      function(error, response, body)
+                                      {
+                                        if (errorCount > 2 && error)
+                                        {
+                                          that.log('Blind level function failed after 3 attempts: %s', error);
+                                          callback(error);
+                                        }
+                                        else if( error )
+                                        {
+                                          that.log('Blind level function failed. Retrying in 1 second: %s', error);
+                                          setTimeout(function() { that.doSetBlindTarget(callback,errorCount+1); }.bind(that),1000);
+                                        }
+                                        else
+                                        {
+                                          that.log('Blind level function succeeded! New blind target is %s',body);
+					  that.blindTarget = parseInt(body);
+					  setTimeout(function(){
+				            that.enableSet = false;
+				            that.blindsService.getCharacteristic(Characteristic.TargetPosition).setValue(that.blindTarget);
+					    that.enableSet = true;
+					  }, 400);
+					  callback();
+                                        }
+                                      }.bind(that));
+              },
+
+  setBlindTarget: function(level, callback)
+	       {
+                 var that = this;
+	         if (this.enableSet == true )
+		 {
+                   this.newBlindTarget = level;
+	           setTimeout(function() { that.doSetBlindTarget(callback,0); }.bind(that),300);
+		 }
+	         else
+	         {
+		   callback();
+		 }
+	       },
 
   setBrightness: function(level, callback)
                {
@@ -1843,7 +2027,23 @@ HttpAccessory.prototype =
                           return [informationService, this.garageService];
                           break;
                       }
-                          
+                         
+	              case "Blinds":
+		      {
+			  this.blindsService = new Service.WindowCovering(this.name);
+			  this.blindsService.getCharacteristic(Characteristic.CurrentPosition)
+			      .on('get', function(callback) {callback(null,that.blindPosition)})
+
+			  this.blindsService.getCharacteristic(Characteristic.TargetPosition)
+			      .on('get', function(callback) {callback(null,that.blindTarget)})
+			      .on('set', this.setBlindTarget.bind(this));
+
+			  this.blindsService.getCharacteristic(Characteristic.PositionState)
+			      .on('get', function(callback) {callback(null,2/*that.blindState*/)})
+			  return [informationService, this.blindsService];
+			  break;
+		      }
+
                       case "Lock":
                       {
                           this.lockService = new Service.LockMechanism(this.name);
@@ -1962,7 +2162,30 @@ HttpAccessory.prototype =
                           return [informationService, this.securityService];
                           break;
                       }
-                          
+
+                      case "Keypad":
+                      {
+                          this.keypadService1 = new Service.StatelessProgrammableSwitch("Button 1",1);
+                          this.keypadService1.getCharacteristic(Characteristic.ServiceLabelIndex).on('get', function(callback) { callback(null,1) });
+                      
+                          this.keypadService2 = new Service.StatelessProgrammableSwitch("Button 2",2);
+                          this.keypadService2.getCharacteristic(Characteristic.ServiceLabelIndex).on('get', function(callback) { callback(null,2) });
+                      
+                          this.keypadService3 = new Service.StatelessProgrammableSwitch("Button 3",3);
+                          this.keypadService3.getCharacteristic(Characteristic.ServiceLabelIndex).on('get', function(callback) { callback(null,3) });
+                       
+                          this.keypadService4 = new Service.StatelessProgrammableSwitch("Button 4",4);
+                          this.keypadService4.getCharacteristic(Characteristic.ServiceLabelIndex).on('get', function(callback) { callback(null,4) });
+                    
+                          this.keypadService5 = new Service.StatelessProgrammableSwitch("Button 5",5);
+                          this.keypadService5.getCharacteristic(Characteristic.ServiceLabelIndex).on('get', function(callback) { callback(null,5) });
+                       
+                          this.keypadService6 = new Service.StatelessProgrammableSwitch("Button 6",6);
+                          this.keypadService6.getCharacteristic(Characteristic.ServiceLabelIndex).on('get', function(callback) { callback(null,6) });
+
+                         return [informationService, this.keypadService1, this.keypadService2, this.keypadService3, this.keypadService4, this.keypadService5, this.keypadService6];
+                         break;
+                      }
                       case "Thermostat":
                       {
                           this.thermostatService = new Service.Thermostat(this.name);
