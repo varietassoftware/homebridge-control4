@@ -779,7 +779,7 @@ function HttpAccessory(log, config)
         var curcoolseturl = "";
         var curtempurl = "";
         
-        if( this.service != "Thermostat" )
+        if( this.service != "Thermostat" && this.service != "Blinds" )
         {
             var statusemitter = pollingtoevent(function(done)
                                                {
@@ -922,6 +922,83 @@ function HttpAccessory(log, config)
                                  that.enableSet = true;
                             });
         }
+	else if( this.service == "Blinds" )
+	{
+	  {
+            url = this.base_url + "/blinds_target";
+            var blindtargetemitter = pollingtoevent(function(done)
+		    				{
+		    				  that.httpRequest(url, "", "GET", that.username, that.password, that.sendimmediately,
+							  function(error, response, body)
+							  {
+							    if (error)
+						            {
+							      done(error,null);
+						            }
+						            else
+							    {
+						              done(null,body);
+						            }
+						          })
+		   				}, {longpolling:true,interval:this.refresh_interval,longpollEventName:"blindtargetstatuspoll"});
+
+	    blindtargetemitter.on("error", function(err,data) {
+              that.log("HTTP get blind target status function failed: %s", err.message);
+	    });
+
+            blindtargetemitter.on("blindtargetstatuspoll",
+                               function(data)
+                               {
+                                 if( data == null || data.length == 0 )
+                                   return;
+
+                                 that.blindTarget = parseInt(data);
+                                 that.log(that.service, "received blind target ",url, " blind target level is currently", data);
+
+                                 that.enableSetState = false;
+                                 that.blindsService.getCharacteristic(Characteristic.TargetPosition).setValue(that.blindTarget);
+                                 that.enableSetState = true;
+                               });
+
+	  }
+	  {
+            url = this.base_url + "/blinds_level";
+            var blindposemitter = pollingtoevent(function(done)
+		    				{
+		    				  that.httpRequest(url, "", "GET", that.username, that.password, that.sendimmediately,
+							  function(error, response, body)
+							  {
+							    if (error)
+						            {
+							      done(error,null);
+						            }
+						            else
+							    {
+						              done(null,body);
+						            }
+						          })
+		   				}, {longpolling:true,interval:this.refresh_interval,longpollEventName:"blindposstatuspoll"});
+
+	    blindposemitter.on("error", function(err,data) {
+              that.log("HTTP get blind position status function failed: %s", err.message);
+	    });
+
+            blindposemitter.on("blindposstatuspoll",
+                               function(data)
+                               {
+                                 if( data == null || data.length == 0 )
+                                   return;
+
+                                 that.blindPosition = parseInt(data);
+                                 that.log(that.service, "received blind position ",url, " blind target level is currently", data);
+
+                                 that.enableSetState = false;
+                                 that.blindsService.getCharacteristic(Characteristic.CurrentPosition).setValue(that.blindPosition);
+                                 that.enableSetState = true;
+                               });
+
+          }
+	}
         else
         {
           // Emitter for current hvac status
