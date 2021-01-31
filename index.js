@@ -1572,7 +1572,7 @@ HttpAccessory.prototype =
                                       }
                                       else
                                       {
-                                        var binaryState = parseInt(value.replace(/\D/g,""));
+                                        var binaryState = parseInt(body.replace(/\D/g,""));
                                         this.state = binaryState > 0;
                                         this.log(this.service, "received power",this.status_url, "state is currently", binaryState);
 
