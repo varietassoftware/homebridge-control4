@@ -235,7 +235,7 @@ function HttpAccessory(log, config)
                                      }
                                      else
                                      {
-                                     var binaryState = parseInt(value.replace(/\D/g,""));
+                                     var binaryState = parseInt(body.replace(/\D/g,""));
                                      that.log('Received security system state: ',binaryState);
                                      that.state = binaryState > 0;
                                      if( that.securityService && binaryState < 10 )
@@ -244,7 +244,8 @@ function HttpAccessory(log, config)
                                      that.secCurState = binaryState;
                                      that.secTarState = binaryState;
                                      } else {
-                                     that.secTarState = 0;
+                                     that.secTarState = 3;
+				     that.secCurState = 3;
                                      }
                                      that.enableSet = false;
                                      that.securityService.getCharacteristic(Characteristic.SecuritySystemCurrentState).
@@ -296,7 +297,7 @@ function HttpAccessory(log, config)
                                      that.log('HTTP get power function failed: %s', error.message);
                                      return;
                                      } else {
-                                     var binaryState = parseInt(value.replace(/\D/g,""));
+                                     var binaryState = parseInt(body.replace(/\D/g,""));
 			             that.log('Received security system status: ',binaryState);
                                      that.state = binaryState > 0;
                                      if( that.securityService && binaryState < 10 ) {
@@ -332,6 +333,39 @@ function HttpAccessory(log, config)
 			    that.enableSet = true;
 			}
 		    }
+		    break;
+		
+	        case "Security":
+		    that.httpRequest(that.status_url, "", "GET", that.username, that.password, that.sendimmediately, function(error, response, body)
+				 {
+				     if (error)
+				     {
+					 that.log('HTTP get power function failed: %s', error.message);
+					 return;
+				     }
+				     else
+				     {
+					 var binaryState = parseInt(body.replace(/\D/g,""));
+					 that.log('Received security system state: ',binaryState);
+					 that.state = binaryState > 0;
+					 if( that.securityService && binaryState < 10 )
+					 {
+					     if( binaryState < 5 ) {
+						 that.secCurState = binaryState;
+						 that.secTarState = binaryState;
+					     } else {
+						 that.secTarState = 3;
+						 that.secCurState = 3;
+					     }
+					     that.enableSet = false;
+					     that.securityService.getCharacteristic(Characteristic.SecuritySystemCurrentState).
+						 setValue(that.secCurState);
+					     that.securityService.getCharacteristic(Characteristic.SecuritySystemTargetState).
+						 setValue(that.secTarState);
+					     that.enableSet = true;
+					 }
+				     }
+				 });
 		    break;
 	    }
 	}
@@ -613,7 +647,7 @@ function HttpAccessory(log, config)
                                      that.log('HTTP get power function failed: %s', error.message);
                                      return;
                                      } else {
-                                     var binaryState = parseInt(value.replace(/\D/g,""));
+                                     var binaryState = parseInt(body.replace(/\D/g,""));
                                      that.log('Received security system state: ',binaryState);
                                      that.state = binaryState > 0;
                                      if( that.securityService && binaryState < 10 ) {
@@ -751,6 +785,7 @@ function HttpAccessory(log, config)
     this.lastSent = false;
     this.lastState = false;
     this.blindPosition = 0;
+    this.newBlindTarget = -1;
     this.blindTarget = 0;
     this.blindState = 2;
     if( this.invert_contact == "yes" )
@@ -953,6 +988,9 @@ function HttpAccessory(log, config)
                                    return;
 
                                  that.blindTarget = parseInt(data);
+				 if( that.newBlindTarget == -1 ) {
+			           that.newBlindTarget = that.blindTarget;
+				 }
                                  that.log(that.service, "received blind target ",url, " blind target level is currently", data);
 
                                  that.enableSetState = false;
@@ -1725,7 +1763,7 @@ HttpAccessory.prototype =
   setBlindTarget: function(level, callback)
 	       {
                  var that = this;
-	         if (this.enableSet == true )
+	         if (this.enableSet == true && level != -1 && this.newBlindTarget != -1 )
 		 {
                    this.newBlindTarget = level;
 	           setTimeout(function() { that.doSetBlindTarget(callback,0); }.bind(that),300);
