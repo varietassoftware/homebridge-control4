@@ -960,10 +960,10 @@ function HttpAccessory(log, config)
 	else if( this.service == "Blinds" )
 	{
 	  {
-            url = this.base_url + "/blinds_target";
+            var blindurl = this.base_url + "/blinds_target";
             var blindtargetemitter = pollingtoevent(function(done)
 		    				{
-		    				  that.httpRequest(url, "", "GET", that.username, that.password, that.sendimmediately,
+		    				  that.httpRequest(blindurl, "", "GET", that.username, that.password, that.sendimmediately,
 							  function(error, response, body)
 							  {
 							    if (error)
@@ -991,7 +991,7 @@ function HttpAccessory(log, config)
 				 if( that.newBlindTarget == -1 ) {
 			           that.newBlindTarget = that.blindTarget;
 				 }
-                                 that.log(that.service, "received blind target ",url, " blind target level is currently", data);
+                                 that.log(that.service, "received blind target ",blindurl, " blind target level is currently", data);
 
                                  that.enableSetState = false;
                                  that.blindsService.getCharacteristic(Characteristic.TargetPosition).setValue(that.blindTarget);
@@ -1000,10 +1000,10 @@ function HttpAccessory(log, config)
 
 	  }
 	  {
-            url = this.base_url + "/blinds_level";
+            blindurl = this.base_url + "/blinds_level";
             var blindposemitter = pollingtoevent(function(done)
 		    				{
-		    				  that.httpRequest(url, "", "GET", that.username, that.password, that.sendimmediately,
+		    				  that.httpRequest(blindurl, "", "GET", that.username, that.password, that.sendimmediately,
 							  function(error, response, body)
 							  {
 							    if (error)
@@ -1028,7 +1028,7 @@ function HttpAccessory(log, config)
                                    return;
 
                                  that.blindPosition = parseInt(data);
-                                 that.log(that.service, "received blind position ",url, " blind target level is currently", data);
+                                 that.log(that.service, "received blind position ",blindurl, " blind position level is currently", data);
 
                                  that.enableSetState = false;
                                  that.blindsService.getCharacteristic(Characteristic.CurrentPosition).setValue(that.blindPosition);
