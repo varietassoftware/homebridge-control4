@@ -20,7 +20,7 @@ or directly from <a href="http://www.varietassoftware.com/control4">Varietas Sof
 
 Supports bidirectional communication with a Control4 project on the HomeBridge Platform. Currently supports
 native Control4 lights, dimmers, contact switches, garage door openers, ceiling fans (connected to switch),
-fan speed controllers, motion sensors, locks, and security systems.
+fan speed controllers, blinds, motion sensors, locks, and security systems.
 
 # Installation
 
