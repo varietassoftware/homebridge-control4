@@ -71,8 +71,15 @@ function HttpAccessory(log, config)
         this.off_string = config["off_string"] || "Off";
         this.auto_string = config["auto_string"] || "Auto";
     }
-    
+
     var that = this;
+
+    var key1Val = 0;
+    var key2Val = 0;
+    var key3Val = 0;
+    var key4Val = 0;
+    var key5Val = 0;
+    var key6Val = 0;
     
     const requestHandler = (request, response) => {
         console.log(request.url)
@@ -85,37 +92,44 @@ function HttpAccessory(log, config)
        
         if( that.service == "Keypad" )
         {
-            var binaryState = value;
-            console.log("Detected keypad "+prop+" button event ("+binaryState+").  Calling service update.");
-            switch (prop) {
+            var binaryState = parseInt(value.replace(/\D/g,""));
+	    var keypad = parseInt(prop.replace(/\D/g,""));
+            console.log("Detected keypad "+prop+" button event ("+value+").  Calling service update.");
+            switch (keypad) {
                 case 1:
                 {
-                    that.keypadService1.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(binaryState);
+		    that.key1Val = binaryState;
+                    that.keypadService1.updateCharacteristic(Characteristic.ProgrammableSwitchEvent,binaryState);
                     break;
                 }
                 case 2:
                 {
-                    that.keypadService2.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(binaryState);
+		    that.key2Val = binaryState;
+                    that.keypadService2.updateCharacteristic(Characteristic.ProgrammableSwitchEvent,binaryState);
                     break;
                 }
                 case 3:
                 {
-                    that.keypadService3.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(binaryState);
+		    that.key3Val = binaryState;
+                    that.keypadService3.updateCharacteristic(Characteristic.ProgrammableSwitchEvent,binaryState);
                     break;
                 }
                 case 4:
                 {
-                    that.keypadService4.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(binaryState);
+		    that.key4Val = binaryState;
+                    that.keypadService4.updateCharacteristic(Characteristic.ProgrammableSwitchEvent,binaryState);
                     break;
                 }
                 case 5:
                 {
-                    that.keypadService5.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(binaryState);
+		    that.key5Val = binaryState;
+                    that.keypadService5.updateCharacteristic(Characteristic.ProgrammableSwitchEvent,binaryState);
                     break;
                 } 
                 case 6: 
                 {
-                    that.keypadService6.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(binaryState);
+		    that.key6Val = binaryState;
+                    that.keypadService6.updateCharacteristic(Characteristic.ProgrammableSwitchEvent,binaryState);
                     break;
                 }
                 default: 
@@ -553,7 +567,7 @@ function HttpAccessory(log, config)
             {
                 that.log(that.service, "received current heat setpoint",that.set_target_heat_url, "heat setpoint is currently", value);
                 that.thermHeatSet = parseFloat(value);
-                
+
                 var state = that.thermTarState;
                 if( that.thermTarState == Characteristic.TargetHeatingCoolingState.AUTO)
                 {
@@ -599,7 +613,7 @@ function HttpAccessory(log, config)
             {
                 that.log(that.service, "received current cool setpoint",that.set_target_cool_url, "cool setpoint is currently", value);
                 that.thermCoolSet = parseFloat(value);
-         
+
                 var state = that.thermTarState;      
                 if( that.thermTarState == Characteristic.TargetHeatingCoolingState.AUTO)
                 {
@@ -800,6 +814,7 @@ function HttpAccessory(log, config)
     this.thermCurState = Characteristic.TargetHeatingCoolingState.OFF;
     this.thermStatus = Characteristic.TargetHeatingCoolingState.OFF;
     this.thermHeatSet = -100;
+    this.thermDisplayUnits = Characteristic.TemperatureDisplayUnits.CELSIUS;
     this.thermCoolSet = -100;
     this.thermCurrentTemp = -100;
     this.thermTarState = Characteristic.TargetHeatingCoolingState.OFF;
@@ -1000,7 +1015,11 @@ function HttpAccessory(log, config)
 
 	  }
 	  {
+<<<<<<< HEAD
             blindurl = this.base_url + "/blinds_level";
+=======
+            var blindurl = this.base_url + "/blinds_level";
+>>>>>>> 387e6a501b97d388eaa330b263b11ba45260c62f
             var blindposemitter = pollingtoevent(function(done)
 		    				{
 		    				  that.httpRequest(blindurl, "", "GET", that.username, that.password, that.sendimmediately,
@@ -1028,7 +1047,11 @@ function HttpAccessory(log, config)
                                    return;
 
                                  that.blindPosition = parseInt(data);
+<<<<<<< HEAD
                                  that.log(that.service, "received blind position ",blindurl, " blind position level is currently", data);
+=======
+                                 that.log(that.service, "received blind position ",blindurl, " blind level is currently", data);
+>>>>>>> 387e6a501b97d388eaa330b263b11ba45260c62f
 
                                  that.enableSetState = false;
                                  that.blindsService.getCharacteristic(Characteristic.CurrentPosition).setValue(that.blindPosition);
@@ -1213,6 +1236,7 @@ function HttpAccessory(log, config)
                                        return;
 
                                      that.thermHeatSet = parseFloat(data);
+
                                      that.log(that.service, "received hvac heat setpoint",that.get_target_heat_url, "hvac heat setpoint is currently", data);
 
                                      var state = that.thermTarState;
@@ -1282,6 +1306,7 @@ function HttpAccessory(log, config)
                                           return;
 
                                         that.thermCoolSet = parseFloat(data);
+
                                         that.log(that.service, "received hvac cool setpoint",that.get_target_cool_url, "hvac cool setpoint is currently", data);
                                       
                                         var state = that.thermTarState;
@@ -2280,23 +2305,35 @@ HttpAccessory.prototype =
 
                       case "Keypad":
                       {
-                          this.keypadService1 = new Service.StatelessProgrammableSwitch("Button 1",1);
+                          this.keypadService1 = new Service.StatelessProgrammableSwitch("Button 1","Button 1");
                           this.keypadService1.getCharacteristic(Characteristic.ServiceLabelIndex).on('get', function(callback) { callback(null,1) });
+			  this.keypadService1.getCharacteristic(Characteristic.ProgrammableSwitchEvent).on('get',function(callback) { callback(null,that.key1Val) });
+			  this.keypadService1.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({minValue:0,maxValue:2});
                       
-                          this.keypadService2 = new Service.StatelessProgrammableSwitch("Button 2",2);
+                          this.keypadService2 = new Service.StatelessProgrammableSwitch("Button 2","Button 2");
                           this.keypadService2.getCharacteristic(Characteristic.ServiceLabelIndex).on('get', function(callback) { callback(null,2) });
+			  this.keypadService2.getCharacteristic(Characteristic.ProgrammableSwitchEvent).on('get',function(callback) { callback(null,that.key2Val) });
+			  this.keypadService2.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({minValue:0,maxValue:2});
                       
-                          this.keypadService3 = new Service.StatelessProgrammableSwitch("Button 3",3);
+                          this.keypadService3 = new Service.StatelessProgrammableSwitch("Button 3","Button 3");
                           this.keypadService3.getCharacteristic(Characteristic.ServiceLabelIndex).on('get', function(callback) { callback(null,3) });
+			  this.keypadService3.getCharacteristic(Characteristic.ProgrammableSwitchEvent).on('get',function(callback) { callback(null,that.key3Val) });
+			  this.keypadService3.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({minValue:0,maxValue:2});
                        
-                          this.keypadService4 = new Service.StatelessProgrammableSwitch("Button 4",4);
+                          this.keypadService4 = new Service.StatelessProgrammableSwitch("Button 4","Button 4");
                           this.keypadService4.getCharacteristic(Characteristic.ServiceLabelIndex).on('get', function(callback) { callback(null,4) });
+			  this.keypadService4.getCharacteristic(Characteristic.ProgrammableSwitchEvent).on('get',function(callback) { callback(null,that.key4Val) });
+			  this.keypadService4.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({minValue:0,maxValue:2});
                     
-                          this.keypadService5 = new Service.StatelessProgrammableSwitch("Button 5",5);
+                          this.keypadService5 = new Service.StatelessProgrammableSwitch("Button 5","Button 5");
                           this.keypadService5.getCharacteristic(Characteristic.ServiceLabelIndex).on('get', function(callback) { callback(null,5) });
+			  this.keypadService5.getCharacteristic(Characteristic.ProgrammableSwitchEvent).on('get',function(callback) { callback(null,that.key5Val) });
+			  this.keypadService5.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({minValue:0,maxValue:2});
                        
-                          this.keypadService6 = new Service.StatelessProgrammableSwitch("Button 6",6);
+                          this.keypadService6 = new Service.StatelessProgrammableSwitch("Button 6","Button 6");
                           this.keypadService6.getCharacteristic(Characteristic.ServiceLabelIndex).on('get', function(callback) { callback(null,6) });
+			  this.keypadService6.getCharacteristic(Characteristic.ProgrammableSwitchEvent).on('get',function(callback) { callback(null,that.key6Val) });
+			  this.keypadService6.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setProps({minValue:0,maxValue:2});
 
                          return [informationService, this.keypadService1, this.keypadService2, this.keypadService3, this.keypadService4, this.keypadService5, this.keypadService6];
                          break;
