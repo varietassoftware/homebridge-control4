@@ -283,6 +283,12 @@ function HttpAccessory(log, config)
             switch (that.service) {
                 case "Light":
                 case "Dimmer":
+                    if( that.currentLevel < 0 ) {
+                        that.currentLevel = 0;
+                    }
+                    if( that.currentLevel > 100 ) {
+                        that.currentLevel = 100;
+                    }
                     if (that.lightbulbService) {
                         that.log(that.service, "received brightness",that.brightnesslvl_url, "level is currently", that.currentlevel);
                         that.lightbulbService.getCharacteristic(Characteristic.Brightness)
@@ -292,6 +298,12 @@ function HttpAccessory(log, config)
                     }
                     break;
                 case "Speaker":
+                    if( that.currentLevel < 0 ) {
+                        that.currentLevel = 0;
+                    }
+                    if( that.currentLevel > 100 ) {
+                        that.currentLevel = 100;
+                    }
                     if( that.speakerService) {
                         that.log(that.service, "received volume",that.brightnesslvl_url, "volume is currently", that.currentlevel);
                         that.speakerService.getCharacteristic(Characteristic.Volume).setValue(that.currentlevel);
@@ -299,6 +311,12 @@ function HttpAccessory(log, config)
                     }
                     break;
                 case "Fan":
+                    if( that.currentLevel < 0 ) {
+                        that.currentLevel = 0;
+                    }
+                    if( that.currentLevel > 100 ) {
+                        that.currentLevel = 100;
+                    }
                     if( that.fanService ) {
                         that.log(that.service, "received fan level",that.brightnesslvl_url, "level is currently", that.currentlevel);
                         that.fanService.getCharacteristic(Characteristic.RotationSpeed)
@@ -389,6 +407,10 @@ function HttpAccessory(log, config)
 	        case "Blinds":
 		    if( that.blindsService ) {
 			that.blindPosition = parseInt(value.replace(/\D/g,""));
+                        if( that.blindPosition < 0 )
+                            that.blindPosition = 0;
+                        if( that.blindPosition > 100 )
+                            that.blindPosition = 100;
 			that.log(that.service, "received update to blind level: ",that.blindPosition);
 			that.enableSet = false;
 			that.blindsService.getCharacteristic(Characteristic.CurrentPosition).setValue(that.blindPosition);
@@ -403,6 +425,12 @@ function HttpAccessory(log, config)
 	        case "Blinds":
 		    if( that.blindsService ) {
 			that.blindTarget = parseInt(value.replace(/\D/g,""));
+                        if( that.blindTarget < 0 ) {
+                            that.blindTarget = 0;
+                        }
+                        if( that.blindTarget > 100 ) {
+                            that.blindTarget = 100;
+                        }
 			that.log(that.service, "received update to blind target level: ",that.blindTarget);
 			that.enableSet = false;
 			that.blindsService.getCharacteristic(Characteristic.TargetPosition).setValue(that.blindTarget);
@@ -551,7 +579,7 @@ function HttpAccessory(log, config)
             {
                 that.log(that.service, "received current temperature",that.get_temperature_url, "temperature is currently", value);
                 that.thermCurrentTemp = parseFloat(value);
-                if( that.thermCurrentTemp >= 0 && that.thermCurrentTemp <= 100 )
+                if( that.thermCurrentTemp >= 10 && that.thermCurrentTemp <= 38 )
                   that.thermostatService.getCharacteristic(Characteristic.CurrentTemperature).setValue(parseFloat(value));
                 else
                   that.log(that.service, "Received temperature is outside of valid range.  Cannot set temperature: ",that.thermCurrentTemp);
@@ -1003,6 +1031,12 @@ function HttpAccessory(log, config)
                                    return;
 
                                  that.blindTarget = parseInt(data);
+                                 if( that.blindTarget < 0 ) {
+                                     that.blindTarget = 0;
+                                 }
+                                 if( that.blindTarget > 100 ) {
+                                     that.blindTarget = 100;
+                                 }
 				 if( that.newBlindTarget == -1 ) {
 			           that.newBlindTarget = that.blindTarget;
 				 }
@@ -1043,7 +1077,13 @@ function HttpAccessory(log, config)
                                    return;
 
                                  that.blindPosition = parseInt(data);
-                                 that.log(that.service, "received blind position ",blindurl, " blind level is currently", data);
+                                 if( that.blindPosition < 0 ) {
+                                     that.blindPosition = 0;
+                                 }
+                                 if( that.blindPosition > 100 ) {
+                                     that.blindPosition = 100;
+                                 }
+                                 that.log(that.service, "received blind position ",blindurl, " blind level is currently", that.blindPosition);
 
                                  that.enableSetState = false;
                                  that.blindsService.getCharacteristic(Characteristic.CurrentPosition).setValue(that.blindPosition);
@@ -1370,7 +1410,7 @@ function HttpAccessory(log, config)
                                         that.thermCurrentTemp = parseFloat(data);
                                         that.log(that.service, "received current temperature",that.get_temperature_url, "temperature is currently", data);
  
-                                        if( that.thermCurrentTemp >= 0 && that.thermCurrentTemp <= 100 )
+                                        if( that.thermCurrentTemp >= 10 && that.thermCurrentTemp <= 38 )
                                           that.thermostatService.getCharacteristic(Characteristic.CurrentTemperature).setValue(that.thermCurrentTemp);
                                         else
                                           that.log(that.service,"Received temperature that is outside of range.  Cannot set current temperature: ",that.thermCurrentTemp);
@@ -1444,6 +1484,12 @@ function HttpAccessory(log, config)
                           {
                             case "Light":
                             case "Dimmer":
+                              if( that.currentLevel < 0 ) {
+                                  that.currentLevel = 0;
+                              }
+                              if( that.currentLevel > 100 ) {
+                                  that.currentLevel = 100;
+                              }
                               if (that.lightbulbService)
                               {
                                 that.log(that.service, "received brightness",that.brightnesslvl_url, "level is currently", that.currentlevel);
@@ -1452,6 +1498,12 @@ function HttpAccessory(log, config)
                               }
                               break;
                             case "Speaker":
+                              if( that.currentLevel < 0 ) {
+                                  that.currentLevel = 0;
+                              }
+                              if( that.currentLevel > 100 ) {
+                                  that.currentLevel = 100;
+                              }
                               if( that.speakerService) {
                                 that.log(that.service, "received volume",that.brightnesslvl_url, "volume is currently", that.currentlevel);
                                 that.speakerService.getCharacteristic(Characteristic.Volume).setValue(that.currentlevel);
@@ -1459,6 +1511,12 @@ function HttpAccessory(log, config)
                               } 
                               break;
                             case "Fan":
+                              if( that.currentLevel < 0 ) {
+                                  that.currentLevel = 0;
+                              }
+                              if( that.currentLevel > 100 ) {
+                                  that.currentLevel = 100;
+                              }
                               if( that.fanService )
                               {
                                 that.log(that.service, "received fan level",that.brightnesslvl_url, "level is currently", that.currentlevel);
@@ -1765,8 +1823,14 @@ HttpAccessory.prototype =
                                         }
                                         else
                                         {
-                                          that.log('Blind level function succeeded! New blind target is %s',body);
 					  that.blindTarget = parseInt(body);
+                                          if( that.blindTarget < 0 ) {
+                                              that.blindTarget = 0;
+                                          }
+                                          if( that.blindTarget > 100 ) {
+                                              that.blindTarget = 100;
+                                          }
+                                          that.log('Blind level function succeeded! New blind target is %s',that.blindTarget);
 					  setTimeout(function(){
 				            that.enableSet = false;
 				            that.blindsService.getCharacteristic(Characteristic.TargetPosition).setValue(that.blindTarget);
@@ -1813,6 +1877,12 @@ HttpAccessory.prototype =
                        level = Math.round(level/25);
         
                    this.currentlevel = level;
+                   if( this.currentLevel < 0 ) {
+                       this.currentLevel = 0;
+                   }
+                   if( this.currentLevel > 100 ) {
+                       this.currentLevel = 100;
+                   }
 
                    setTimeout(function() { that.doSetBrightness(callback,0); }.bind(that),300);
                  }
