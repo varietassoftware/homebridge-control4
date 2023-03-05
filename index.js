@@ -357,12 +357,23 @@ function HttpAccessory(log, config)
 	        case "Blinds":
 		    if( that.blindsService ) {
 			var isStopped = parseInt(value.replace(/\D/g,""));
-			that.log(that.service, "received update to stopped motion state: ",isStopped);
+			that.log(that.service, "received raw update to stopped motion state: ",isStopped);
 			if( isStopped == 1 ) {
+                            if( that.blindState == Characteristic.PositionState.STOPPED ) {
+                              that.log(that.service, "current motion status is STOPPED");
+                            }
+                            if( that.blindState == Characteristic.PositionState.INCREASING ) {
+                              that.log(that.service, "current motion status is INCREASING");
+                            }
+                            if( that.blindState == Characteristic.PositionState.DECREASING ) {
+                              that.log(that.service, "current motion status is DECREASING");
+                            }
 			    that.blindState = Characteristic.PositionState.STOPPED;
 			    that.enableSet = false;
 			    that.blindsService.getCharacteristic(Characteristic.PositionState).setValue(that.blindState);
 			    that.enableSet = true;
+
+                            that.log(that.service, "new motion status is STOPPED");
 			}
 		    }
 		    break;
@@ -406,14 +417,53 @@ function HttpAccessory(log, config)
 	    switch (that.service) {
 	        case "Blinds":
 		    if( that.blindsService ) {
+                        var lastBlindPosition = that.blindPosition;
+                        that.log(that.service, "original blind level value: ",that.blindPosition);
+
 			that.blindPosition = parseInt(value.replace(/\D/g,""));
                         if( that.blindPosition < 0 )
                             that.blindPosition = 0;
                         if( that.blindPosition > 100 )
                             that.blindPosition = 100;
 			that.log(that.service, "received update to blind level: ",that.blindPosition);
+
+                        if( that.blindState == Characteristic.PositionState.STOPPED ) {
+                          that.log(that.service, "current motion status is STOPPED");
+                        }
+                        if( that.blindState == Characteristic.PositionState.INCREASING ) {
+                          that.log(that.service, "current motion status is INCREASING");
+                        }
+                        if( that.blindState == Characteristic.PositionState.DECREASING ) {
+                          that.log(that.service, "current motion status is DECREASING");
+                        }
+                        var newBlindState = Characteristic.PositionState.STOPPED;
+                        if( that.blindPosition > lastBlindPosition ) {  
+                          if( that.blindTarget >= 0 && that.blindTarget == that.blindPosition ) {
+                            newBlindState = Characteristic.PositionState.STOPPED;
+                            that.log(that.service, "new motion status is STOPPED.  Current position has reached target.");
+                          } else {
+                            newBlindState = Characteristic.PositionState.INCREASING;
+                            that.log(that.service, "new motion status is INCREASING");
+                          }
+                        }
+                        else if( that.blindPosition < lastBlindPosition ) {
+                          if( that.blindTarget >= 0 && that.blindTarget == that.blindPosition ) {
+                            newBlindState = Characteristic.PositionState.STOPPED;
+                            that.log(that.service, "new motion status is STOPPED. Current position has reached target.");
+                          } else {
+                            that.log(that.service, "new motion status is DECREASING");
+                            newBlindState = Characteristic.PositionState.DECREASING;
+                          }
+                        }
+                        else {
+                          that.log(that.service, "new motion status is STOPPED");
+                          newBlindState = Characteristic.PositionState.STOPPED;
+                        }
+                        that.blindState = newBlindState;
+
 			that.enableSet = false;
 			that.blindsService.getCharacteristic(Characteristic.CurrentPosition).setValue(that.blindPosition);
+                        that.blindsService.getCharacteristic(Characteristic.PositionState).setValue(that.blindState);
 			that.enableSet = true;
 		    }
 		    break;
@@ -424,6 +474,7 @@ function HttpAccessory(log, config)
 	    switch (that.service) {
 	        case "Blinds":
 		    if( that.blindsService ) {
+                        that.log(that.service, "current blind target level is: ",that.blindTarget);
 			that.blindTarget = parseInt(value.replace(/\D/g,""));
                         if( that.blindTarget < 0 ) {
                             that.blindTarget = 0;
@@ -445,18 +496,31 @@ function HttpAccessory(log, config)
 	        case "Blinds":
 		    if( that.blindsService ) {
 			var isOpening = parseInt(value.replace(/\D/g,""));
-			if( isOpening == 1 ) {
+                        that.log(that.service, "received raw update to opening motion state: ",isOpening);
+                        if( that.blindState == Characteristic.PositionState.STOPPED ) {
+                              that.log(that.service, "current motion status is STOPPED");
+                        }
+                        if( that.blindState == Characteristic.PositionState.INCREASING ) {
+                          that.log(that.service, "current motion status is INCREASING");
+                        }
+                        if( that.blindState == Characteristic.PositionState.DECREASING ) {
+                          that.log(that.service, "current motion status is DECREASING");
+                        }
+
+                        if( isOpening == 1 ) {
 			    that.blindState = Characteristic.PositionState.INCREASING;
+                            that.log(that.service, "new motion status is INCREASING");
+
 			    that.enableSet = false;
-			    //that.blindsService.getCharacteristic(Characteristic.PositionState).setValue(that.blindState);
+			    that.blindsService.getCharacteristic(Characteristic.PositionState).setValue(that.blindState);
 			    that.enableSet = true;
 			} else {
 			    that.blindState = Characteristic.PositionState.STOPPED;
+                            that.log(that.service, "new motion status is STOPPED");
 			    that.enableSet = false;
-			    //that.blindsService.getCharacteristic(Characteristic.PositionState).setValue(that.blindState);
+			    that.blindsService.getCharacteristic(Characteristic.PositionState).setValue(that.blindState);
 			    that.enableSet = true;
 			}
-			that.log(that.service, "received update to opening motion state: ",isOpening);
 		    }
 		    break;
 	    }
@@ -467,15 +531,28 @@ function HttpAccessory(log, config)
 	        case "Blinds":
 		    if( that.blindsService ) {
 			var isClosing = parseInt(value.replace(/\D/g,""));
+                        that.log(that.service, "received raw update to closing motion state: ",isClosing);
+                        if( that.blindState == Characteristic.PositionState.STOPPED ) {
+                              that.log(that.service, "current motion status is STOPPED");
+                        }
+                        if( that.blindState == Characteristic.PositionState.INCREASING ) {
+                          that.log(that.service, "current motion status is INCREASING");
+                        }
+                        if( that.blindState == Characteristic.PositionState.DECREASING ) {
+                          that.log(that.service, "current motion status is DECREASING");
+                        } 
+
 			if( isClosing == 1 ) {
 			    that.blindState = Characteristic.PositionState.DECREASING;
+                            that.log(that.service, "new motion status is DECREASING");
 			    that.enableSet = false;
-			    //that.blindsService.getCharacteristic(Characteristic.PositionState).setValue(that.blindState);
+			    that.blindsService.getCharacteristic(Characteristic.PositionState).setValue(that.blindState);
 			    that.enableSet = true;
 			} else {
 			    that.blindState = Characteristic.PositionState.STOPPED;
+                            that.log(that.service, "new motion status is STOPPED");
 			    that.enableSet = false;
-			    //that.blindsService.getCharacteristic(Characteristic.PositionState).setValue(that.blindState);
+			    that.blindsService.getCharacteristic(Characteristic.PositionState).setValue(that.blindState);
 			    that.enableSet = true;
 			}
 			that.log(that.service, "received update to closing motion state: ",isClosing);
@@ -826,9 +903,8 @@ function HttpAccessory(log, config)
     this.state = false;
     this.lastSent = false;
     this.lastState = false;
-    this.blindPosition = 0;
-    this.newBlindTarget = -1;
-    this.blindTarget = 0;
+    this.blindPosition = -1;
+    this.blindTarget = -1;
     this.blindState = 2;
     if( this.invert_contact == "yes" )
         this.lastState = true;
@@ -1030,6 +1106,7 @@ function HttpAccessory(log, config)
                                  if( data == null || data.length == 0 )
                                    return;
 
+                                 that.log(that.service, "current blind target position is: ", that.blindTarget);
                                  that.blindTarget = parseInt(data);
                                  if( that.blindTarget < 0 ) {
                                      that.blindTarget = 0;
@@ -1037,10 +1114,8 @@ function HttpAccessory(log, config)
                                  if( that.blindTarget > 100 ) {
                                      that.blindTarget = 100;
                                  }
-				 if( that.newBlindTarget == -1 ) {
-			           that.newBlindTarget = that.blindTarget;
-				 }
-                                 that.log(that.service, "received blind target ",blindurl, " blind target level is currently", data);
+                                 that.log(that.service, "new blind target position is: ", that.blindTarget);
+                                 that.log(that.service, "received blind target ",blindurl, " blind target level from raw data is currently", data);
 
                                  that.enableSetState = false;
                                  that.blindsService.getCharacteristic(Characteristic.TargetPosition).setValue(that.blindTarget);
@@ -1076,6 +1151,7 @@ function HttpAccessory(log, config)
                                  if( data == null || data.length == 0 )
                                    return;
 
+                                 that.log(that.service, "current blind position is: ", that.blindPosition);
                                  that.blindPosition = parseInt(data);
                                  if( that.blindPosition < 0 ) {
                                      that.blindPosition = 0;
@@ -1083,7 +1159,8 @@ function HttpAccessory(log, config)
                                  if( that.blindPosition > 100 ) {
                                      that.blindPosition = 100;
                                  }
-                                 that.log(that.service, "received blind position ",blindurl, " blind level is currently", that.blindPosition);
+                                 that.log(that.service, "new blind position is: ", that.blindPosition);
+                                 that.log(that.service, "received blind position ",blindurl, " blind level from raw data is currently", data);
 
                                  that.enableSetState = false;
                                  that.blindsService.getCharacteristic(Characteristic.CurrentPosition).setValue(that.blindPosition);
@@ -1804,9 +1881,13 @@ HttpAccessory.prototype =
   doSetBlindTarget: function(callback, errorCount)
               {
                      var that = this;
-                     var url = that.level_url.replace("%t", that.newBlindTarget)
+                     if( that.blindTarget < 0 ) {
+                       return;
+                     }
 
-                     that.log("Setting blind level to %s", that.newBlindTarget);
+                     var url = that.level_url.replace("%t", that.blindTarget)
+
+                     that.log("Setting blind target level to %s", that.blindTarget);
 
                      that.httpRequest(url, "", "GET", that.username, that.password, that.sendimmediately,
                                       function(error, response, body)
@@ -1844,9 +1925,11 @@ HttpAccessory.prototype =
   setBlindTarget: function(level, callback)
 	       {
                  var that = this;
-	         if (this.enableSet == true && level != -1 && this.newBlindTarget != -1 )
+	         if (this.enableSet == true && level != -1 && level != this.blindTarget )
 		 {
-                   this.newBlindTarget = level;
+                   that.log(that.service, "current blind target level is: ", this.blindTarget);
+                   this.blindTarget = level;
+                   that.log(that.service, "received homekit command to set target level to: ", this.blindTarget);
 	           setTimeout(function() { that.doSetBlindTarget(callback,0); }.bind(that),300);
 		 }
 	         else
@@ -2234,14 +2317,82 @@ HttpAccessory.prototype =
 		      {
 			  this.blindsService = new Service.WindowCovering(this.name);
 			  this.blindsService.getCharacteristic(Characteristic.CurrentPosition)
-			      .on('get', function(callback) {callback(null,that.blindPosition)})
+			      .on('get', function(callback) 
+                          {
+                            if( this.blindPosition < 0 ) {
+                              this.log(this.service, "current blind position is uninitialized. Calling to get current position from device.");
+                              var blindurl = this.base_url + "/blinds_level";
+                              this.httpRequest(blindurl, "", "GET", this.username, this.password, this.sendimmediately,
+                                                          function(error, response, body)
+                                                          {
+                                                            if (error)
+                                                            {
+                                                              this.log(this.service, "error initializing current blind position.");
+                                                              callback(error,null);
+                                                            }
+                                                            else
+                                                            {
+                                                              if( body == null || body.length == 0 )
+                                                                return;
+
+                                                              this.log(this.service, "current blind position is: ", this.blindPosition);
+                                                              this.blindPosition = parseInt(body);
+                                                              if( this.blindPosition < 0 ) {
+                                                                this.blindPosition = 0;
+                                                              }
+                                                              if( this.blindPosition > 100 ) {
+                                                                this.blindPosition = 100;
+                                                              }
+                                                              this.log(this.service, "new blind position is: ", this.blindPosition);
+                                                              this.log(this.service, "received blind position ",blindurl, " blind level from raw data is currently", body);
+                                                              callback(null,this.blindPosition);
+                                                            }
+                                                          });
+                            } else {
+                              callback(null,this.blindPosition)
+                            }
+                          })
 
 			  this.blindsService.getCharacteristic(Characteristic.TargetPosition)
-			      .on('get', function(callback) {callback(null,that.blindTarget)})
-			      .on('set', this.setBlindTarget.bind(this));
+			      .on('get', function(callback) 
+                          {
+                            if( this.blindTarget < 0 ) {
+                              this.log(this.service, "target blind position is uninitialized. Calling to get current target position from device.");
+                              var blindurl = this.base_url + "/blinds_target";
+                              this.httpRequest(blindurl, "", "GET", this.username, this.password, this.sendimmediately,
+                                                          function(error, response, body)
+                                                          { 
+                                                            if (error)
+                                                            { 
+                                                              callback(error,null);
+                                                            }
+                                                            else
+                                                            {
+                                                              if( body == null || body.length == 0 )
+                                                                return;
+
+                                                              this.log(this.service, "current blind target position is: ", this.blindTarget);
+                                                              this.blindTarget = parseInt(body);
+                                                              if( this.blindTarget < 0 ) {
+                                                                this.blindTarget = 0;
+                                                              }
+                                                              if( this.blindTarget > 100 ) {
+                                                                this.blindTarget = 100;
+                                                              }
+                                                              this.log(this.service, "new blind target position is: ", this.blindTarget);
+                                                              this.log(this.service, "received blind target ",blindurl, " blind target level from raw data is currently", body);
+                                                              callback(null,this.blindTarget);
+                                                            }
+                                                          });
+                            } else {
+                              callback(null,that.blindTarget);
+                            }
+                          })
+			  .on('set', this.setBlindTarget.bind(this));
 
 			  this.blindsService.getCharacteristic(Characteristic.PositionState)
-			      .on('get', function(callback) {callback(null,2/*that.blindState*/)})
+			      .on('get', function(callback) {callback(null,that.blindState)})
+
 			  return [informationService, this.blindsService];
 			  break;
 		      }
