@@ -314,11 +314,12 @@ function HttpAccessory(log, config)
                     if( that.currentLevel < 0 ) {
                         that.currentLevel = 0;
                     }
-                    if( that.currentLevel > 100 ) {
-                        that.currentLevel = 100;
+                    if( that.currentLevel > 4 ) {
+                        that.currentLevel = 4;
                     }
                     if( that.fanService ) {
                         that.log(that.service, "received fan level",that.brightnesslvl_url, "level is currently", that.currentlevel);
+                        
                         that.fanService.getCharacteristic(Characteristic.RotationSpeed)
                         .setValue(that.currentlevel*25);
                     }
@@ -1149,9 +1150,28 @@ function HttpAccessory(log, config)
                                function(data)
                                {
                                  if( data == null || data.length == 0 )
+                                 {
+                                   that.log(that.service, "Error: Received null data in blind position poll.");
                                    return;
+                                 }
+
+                                 if (typeof data === 'string' || data instanceof String)
+                                 { 
+                                 }
+                                 else 
+                                 {
+                                   that.log(that.service, "Error: Data provided to blind position poll is not a string.");
+                                   return; 
+                                 }
+
+                                 if( !Number.isFinite(parseInt(data.trim())) )
+                                 {
+                                   that.log(that.service, "Error: Data provided to blind position poll is not valid: ", data);
+                                   return;
+                                 }
 
                                  that.log(that.service, "current blind position is: ", that.blindPosition);
+                                 data = data.trim();
                                  that.blindPosition = parseInt(data);
                                  if( that.blindPosition < 0 ) {
                                      that.blindPosition = 0;
