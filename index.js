@@ -2339,7 +2339,7 @@ HttpAccessory.prototype =
 			  this.blindsService.getCharacteristic(Characteristic.CurrentPosition)
 			      .on('get', function(callback) 
                           {
-                            if( this.blindPosition < 0 ) {
+                            if( !Number.isFinite(this.blindPosition) || this.blindPosition < 0 ) {
                               this.log(this.service, "current blind position is uninitialized. Calling to get current position from device.");
                               var blindurl = this.base_url + "/blinds_level";
                               this.httpRequest(blindurl, "", "GET", this.username, this.password, this.sendimmediately,
@@ -2367,11 +2367,11 @@ HttpAccessory.prototype =
                                                               this.log(this.service, "received blind position ",blindurl, " blind level from raw data is currently", body);
                                                               callback(null,this.blindPosition);
                                                             }
-                                                          });
+                                                          }.bind(this));
                             } else {
                               callback(null,this.blindPosition)
                             }
-                          })
+                          }.bind(this))
 
 			  this.blindsService.getCharacteristic(Characteristic.TargetPosition)
 			      .on('get', function(callback) 
